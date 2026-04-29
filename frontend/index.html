@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GamerMind AI — Free Gaming Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  :root {
+    --bg: #050810; --surface: #0c1221; --surface2: #111a2e;
+    --border: #1e3a5f; --accent: #00d4ff; --accent2: #ff6b35;
+    --accent3: #7c3aed; --text: #e2e8f0; --muted: #64748b;
+    --glow: 0 0 20px rgba(0,212,255,0.3); --glow2: 0 0 20px rgba(255,107,53,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Rajdhani', sans-serif; min-height:100vh; overflow-x:hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+    background-size:60px 60px; pointer-events:none; z-index:0;
+  }
+  .app { position:relative; z-index:2; display:flex; flex-direction:column; height:100vh; }
+
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px; border-bottom:1px solid var(--border);
+    background:rgba(5,8,16,0.9); backdrop-filter:blur(12px); flex-shrink:0;
+  }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-icon {
+    width:40px; height:40px;
+    background:linear-gradient(135deg,var(--accent),var(--accent3));
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:20px; box-shadow:var(--glow);
+  }
+  .logo-text {
+    font-family:'Orbitron',monospace; font-weight:900; font-size:18px; letter-spacing:2px;
+    background:linear-gradient(90deg,var(--accent),#fff,var(--accent2));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .logo-sub { font-size:9px; color:var(--muted); letter-spacing:4px; text-transform:uppercase; font-family:'Share Tech Mono',monospace; }
+  .badges { display:flex; gap:8px; align-items:center; }
+  .badge {
+    font-size:10px; padding:4px 10px; border-radius:20px; font-family:'Share Tech Mono',monospace;
+    border:1px solid; display:flex; align-items:center; gap:5px;
+  }
+  .badge.green { color:#00ff88; border-color:rgba(0,255,136,0.3); background:rgba(0,255,136,0.06); }
+  .badge.blue { color:var(--accent); border-color:rgba(0,212,255,0.3); background:rgba(0,212,255,0.06); }
+  .badge.orange { color:var(--accent2); border-color:rgba(255,107,53,0.3); background:rgba(255,107,53,0.06); }
+  .dot { width:5px; height:5px; border-radius:50%; background:currentColor; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .main { display:flex; flex:1; overflow:hidden; }
+
+  .sidebar {
+    width:250px; border-right:1px solid var(--border);
+    background:rgba(12,18,33,0.6); padding:18px 14px;
+    display:flex; flex-direction:column; gap:18px; overflow-y:auto; flex-shrink:0;
+  }
+  .sec-title { font-family:'Orbitron',monospace; font-size:9px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+  .qbtn {
+    display:flex; align-items:center; gap:10px; padding:9px 12px;
+    border:1px solid var(--border); border-radius:8px; background:transparent;
+    color:var(--text); cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:13px;
+    font-weight:600; transition:all 0.2s; text-align:left; width:100%; margin-bottom:5px;
+  }
+  .qbtn:hover { border-color:var(--accent); background:rgba(0,212,255,0.05); color:var(--accent); transform:translateX(3px); }
+  .chips { display:flex; flex-wrap:wrap; }
+  .chip {
+    display:inline-flex; align-items:center; gap:5px; padding:4px 9px;
+    border:1px solid var(--border); border-radius:6px; font-size:11px; color:var(--muted);
+    cursor:pointer; transition:all 0.2s; margin:3px; font-family:'Share Tech Mono',monospace;
+  }
+  .chip:hover { border-color:var(--accent2); color:var(--accent2); background:rgba(255,107,53,0.05); }
+
+  .chat-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .messages {
+    flex:1; overflow-y:auto; padding:24px 28px;
+    display:flex; flex-direction:column; gap:20px; scroll-behavior:smooth;
+  }
+  .messages::-webkit-scrollbar { width:4px; }
+  .messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  .welcome {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100%; gap:20px; text-align:center; padding:40px;
+  }
+  .orb {
+    width:90px; height:90px;
+    background:radial-gradient(circle at 30% 30%,var(--accent),var(--accent3),#0a0020);
+    border-radius:50%; box-shadow:0 0 60px rgba(0,212,255,0.4);
+    animation:float 4s ease-in-out infinite, rotateOrb 10s linear infinite;
+    display:flex; align-items:center; justify-content:center; font-size:36px;
+  }
+  @keyframes rotateOrb {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .welcome h1 {
+    font-family:'Orbitron',monospace; font-size:26px; font-weight:900;
+    background:linear-gradient(90deg,var(--accent),#fff 50%,var(--accent2));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .welcome p { color:var(--muted); font-size:15px; max-width:420px; line-height:1.6; }
+  .free-banner {
+    display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+    background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.15);
+    border-radius:10px; padding:12px 20px;
+  }
+  .free-item { font-size:12px; color:#00ff88; font-family:'Share Tech Mono',monospace; }
+  .wchips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:560px; }
+  .wchip {
+    padding:7px 14px; border:1px solid var(--border); border-radius:20px;
+    font-size:12px; color:var(--text); cursor:pointer; transition:all 0.2s;
+    background:rgba(255,255,255,0.02);
+  }
+  .wchip:hover { border-color:var(--accent); color:var(--accent); background:rgba(0,212,255,0.05); }
+
+  .msg { display:flex; gap:12px; animation:msgIn 0.3s ease; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .msg.user { flex-direction:row-reverse; }
+  .msg-avatar {
+    width:34px; height:34px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;
+  }
+  .msg.ai .msg-avatar { background:linear-gradient(135deg,var(--accent),var(--accent3)); box-shadow:var(--glow); }
+  .msg.user .msg-avatar { background:linear-gradient(135deg,var(--accent2),#ff3366); box-shadow:var(--glow2); }
+  .msg-bubble {
+    max-width:72%; padding:13px 16px; border-radius:12px;
+    font-size:14px; line-height:1.7; font-weight:400;
+  }
+  .msg.ai .msg-bubble { background:var(--surface2); border:1px solid var(--border); border-left:2px solid var(--accent); }
+  .msg.user .msg-bubble { background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(124,58,237,0.08)); border:1px solid rgba(0,212,255,0.2); }
+  .msg-bubble h2,.msg-bubble h3 { font-family:'Orbitron',monospace; font-size:12px; color:var(--accent); margin:10px 0 6px; letter-spacing:1px; }
+  .msg-bubble p { margin-bottom:6px; }
+  .msg-bubble ul,.msg-bubble ol { padding-left:16px; margin:6px 0; }
+  .msg-bubble li { margin-bottom:3px; }
+  .msg-bubble strong { color:var(--accent2); }
+  .msg-bubble code { background:rgba(0,212,255,0.1); padding:2px 6px; border-radius:4px; font-family:'Share Tech Mono',monospace; font-size:12px; }
+  .provider-tag {
+    display:inline-flex; align-items:center; gap:4px; font-size:10px;
+    color:#00ff88; background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.2);
+    padding:2px 8px; border-radius:4px; margin-top:8px; font-family:'Share Tech Mono',monospace;
+  }
+  .wiki-tag {
+    display:inline-flex; align-items:center; gap:4px; font-size:10px;
+    color:var(--accent); background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.15);
+    padding:2px 8px; border-radius:4px; margin-top:4px; margin-left:4px; font-family:'Share Tech Mono',monospace;
+    text-decoration:none;
+  }
+  .wiki-tag:hover { background:rgba(0,212,255,0.12); }
+
+  .typing { display:flex; gap:5px; padding:4px 0; }
+  .typing span { width:7px; height:7px; background:var(--accent); border-radius:50%; animation:typing 1s infinite; }
+  .typing span:nth-child(2){animation-delay:0.2s} .typing span:nth-child(3){animation-delay:0.4s}
+  @keyframes typing { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-8px);opacity:1} }
+
+  .input-area {
+    padding:16px 28px 20px; border-top:1px solid var(--border);
+    background:rgba(5,8,16,0.9); backdrop-filter:blur(12px); flex-shrink:0;
+  }
+  .input-wrap {
+    display:flex; align-items:flex-end; gap:10px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; padding:10px 14px; transition:all 0.2s;
+  }
+  .input-wrap:focus-within {
+    transform: scale(1.02);
+    box-shadow: 0 0 25px rgba(0,212,255,0.5);
+  }
+  textarea {
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--text); font-family:'Rajdhani',sans-serif; font-size:14px;
+    resize:none; max-height:120px; line-height:1.5;
+  }
+  textarea::placeholder { color:var(--muted); }
+  .send-btn {
+    width:40px; height:40px;
+    background:linear-gradient(135deg,var(--accent),var(--accent3));
+    border:none; border-radius:8px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; transition:all 0.2s; flex-shrink:0; box-shadow:var(--glow);
+  }
+  .send-btn:hover { transform:scale(1.06); }
+  .send-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+  .hint { font-size:10px; color:var(--muted); margin-top:7px; text-align:center; font-family:'Share Tech Mono',monospace; letter-spacing:1px; }
+
+  /* Markdown rendering */
+  .msg-bubble h1 { font-size:16px; color:var(--accent); margin-bottom:8px; }
+  .sidebar::-webkit-scrollbar { width:3px; }
+  .sidebar::-webkit-scrollbar-thumb { background:var(--border); }
+
+  /* ── MAP PANEL (Leaflet) ──────────────────────────────────── */
+  .map-panel{
+    width:420px; border-left:1px solid var(--border);
+    display:flex; flex-direction:column; background:rgba(12,18,33,0.6);
+    flex-shrink:0; transition:width 0.3s;
+  }
+  .map-panel.hidden{width:0;border:none;overflow:hidden;}
+  .map-header{
+    padding:14px 16px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+    background:rgba(5,8,16,0.5);backdrop-filter:blur(10px);
+  }
+  .map-title{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);}
+  .map-close{
+    background:transparent;border:1px solid var(--border);color:var(--muted);
+    border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;
+    font-family:'Share Tech Mono',monospace;transition:all 0.2s;
+  }
+  .map-close:hover{border-color:var(--accent2);color:var(--accent2);}
+  .map-info{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .map-game{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+  .map-location-name{font-size:15px;font-weight:600;color:var(--text);}
+  .map-region{font-size:12px;color:var(--muted);margin-top:2px;font-family:'Share Tech Mono',monospace;}
+  #map-container{flex:1;position:relative;}
+  #leaflet-map{width:100%;height:100%;}
+  .map-empty{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;
+    gap:12px;color:var(--muted);text-align:center;padding:24px;
+  }
+  .map-empty .icon{font-size:40px;opacity:0.4;}
+  .map-empty p{font-size:13px;line-height:1.6;max-width:260px;}
+
+  /* Blinking cursor while streaming */
+  .cursor {
+    display: inline-block;
+    color: var(--accent);
+    animation: blink 0.8s step-end infinite;
+    font-weight: bold;
+    margin-left: 2px;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  /* Skill level badge shown in chat */
+  .skill-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; padding: 2px 8px; border-radius: 12px;
+    font-family: 'Share Tech Mono', monospace; margin-top: 4px;
+    margin-left: 4px;
+  }
+  .skill-badge.beginner     { color: #00ff88; background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); }
+  .skill-badge.intermediate { color: var(--accent); background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); }
+  .skill-badge.expert       { color: var(--accent2); background: rgba(255,107,53,0.08); border: 1px solid rgba(255,107,53,0.2); }
+
+  /* Question type badge */
+  .qtype-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; padding: 2px 8px; border-radius: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--muted2); background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border); margin-top: 4px;
+  }
+
+  /* Provider tag — "Google Gemini 1.5 Flash (Free)" */
+  .provider-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.08);
+    border: 1px solid rgba(0, 255, 136, 0.25);
+    margin-top: 10px;
+    cursor: default;
+  }
+
+  .provider-tag::before {
+    content: '⚡';
+    font-size: 11px;
+  }
+
+  /* Map button — "VIEW ON MAP — Secret Ending Trigger" */
+  .map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(124, 58, 237, 0.1));
+    border: 1px solid rgba(255, 107, 53, 0.4);
+    border-radius: 8px;
+    color: #ff6b35;
+    font-size: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.0), rgba(255, 107, 53, 0.08));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .map-btn:hover {
+    border-color: rgba(255, 107, 53, 0.8);
+    color: #ff8c5a;
+    box-shadow: 0 0 16px rgba(255, 107, 53, 0.35),
+                0 0 32px rgba(255, 107, 53, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .map-btn:hover::before { opacity: 1; }
+
+  .map-btn:active { transform: translateY(0px); }
+
+  /* Pin type icon inside map-btn */
+  .map-btn .pin-icon {
+    font-size: 14px;
+    filter: drop-shadow(0 0 4px rgba(255, 107, 53, 0.6));
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎮</div>
+      <div>
+        <div class="logo-text">GamerMind AI</div>
+        <div class="logo-sub">Free Gaming Assistant</div>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge orange">⚡ Fandom Wiki</span>
+      <span class="badge blue">🤖 Gemini / Groq</span>
+      <span class="badge green"><span class="dot"></span>FREE</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="sidebar">
+      <div>
+        <div class="sec-title">⚡ Quick Actions</div>
+        <button class="qbtn" onclick="ask('What are the best tips for beginners in Minecraft?')">🔰 Beginner Tips</button>
+        <button class="qbtn" onclick="ask('What are the most powerful weapons in Elden Ring?')">⚔️ Best Weapons</button>
+        <button class="qbtn" onclick="ask('Give me a walkthrough for the first boss in Dark Souls')">🗺️ Boss Guide</button>
+        <button class="qbtn" onclick="ask('What are all characters in Fortnite and their abilities?')">🦸 Characters & Lore</button>
+        <button class="qbtn" onclick="ask('Best build for solo player in Destiny 2?')">🛠️ Build Guide</button>
+        <button class="qbtn" onclick="ask('What Easter eggs are hidden in GTA V?')">🥚 Easter Eggs</button>
+      </div>
+      <div>
+        <div class="sec-title">🎯 Popular Games</div>
+        <div class="chips">
+          <span class="chip" onclick="ask('Tell me about Minecraft — history, gameplay, latest updates')">⛏️ Minecraft</span>
+          <span class="chip" onclick="ask('Tell me about Fortnite — lore, seasons, mechanics')">🎯 Fortnite</span>
+          <span class="chip" onclick="ask('Tell me about Elden Ring — world, story, characters')">🌑 Elden Ring</span>
+          <span class="chip" onclick="ask('GTA V — missions, story, secrets')">🚗 GTA V</span>
+          <span class="chip" onclick="ask('League of Legends — champions, roles, meta')">🧙 LoL</span>
+          <span class="chip" onclick="ask('Valorant — agents, maps, strategy')">🔫 Valorant</span>
+          <span class="chip" onclick="ask('Cyberpunk 2077 — story, characters, world')">🤖 Cyberpunk</span>
+          <span class="chip" onclick="ask('Genshin Impact — characters, story, tips')">✨ Genshin</span>
+        </div>
+      </div>
+      <div>
+        <div class="sec-title">🆓 Free APIs Used</div>
+        <div style="font-size:11px;color:var(--muted);line-height:2;font-family:'Share Tech Mono',monospace;">
+          <div style="color:#00ff88">✅ Google Gemini (Free)</div>
+          <div style="color:#00ff88">✅ Groq / Llama3 (Free)</div>
+          <div style="color:#00ff88">✅ Fandom Wiki (Free)</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="chat-area">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <div class="orb">🎮</div>
+          <h1>GamerMind AI</h1>
+          <p>Your ultimate gaming assistant — 100% free. Powered by <strong style="color:#00ff88">Google Gemini</strong>, <strong style="color:var(--accent2)">Groq</strong>, and <strong style="color:var(--accent)">Fandom Wiki</strong>.</p>
+          <div class="free-banner">
+            <span class="free-item">✅ Google Gemini Free</span>
+            <span class="free-item">✅ Groq Free</span>
+            <span class="free-item">✅ Fandom Wiki Free</span>
+            <span class="free-item">✅ No Credit Card</span>
+          </div>
+          <div class="wchips">
+            <span class="wchip" onclick="ask('How do I get the secret ending in Cyberpunk 2077?')">🔐 Secret endings</span>
+            <span class="wchip" onclick="ask('What is the lore behind Elden Ring?')">📖 Game lore</span>
+            <span class="wchip" onclick="ask('Best strategy for ranked in Valorant?')">🏆 Ranked tips</span>
+            <span class="wchip" onclick="ask('What are all Minecraft biomes and their features?')">🗺️ Game world</span>
+            <span class="wchip" onclick="ask('Hardest achievements in Dark Souls 3?')">🎖️ Achievements</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrap">
+          <textarea id="inp" placeholder="Ask anything about any game — lore, tips, builds, walkthroughs..." rows="1"
+            onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
+        </div>
+        <div class="hint">ENTER to send · SHIFT+ENTER for new line · 100% Free APIs</div>
+      </div>
+    </div>
+
+    <!-- MAP PANEL -->
+    <div class="map-panel hidden" id="mapPanel">
+      <div class="map-header">
+        <span class="map-title" id="mapTitle">🗺️ GAME MAP</span>
+        <button class="map-close" onclick="closeMap()">✕ CLOSE</button>
+      </div>
+      <div class="map-info" id="mapInfo" style="display:none">
+        <div class="map-game" id="mapGame"></div>
+        <div class="map-location-name" id="mapLocationName"></div>
+        <div class="map-region" id="mapRegion"></div>
+      </div>
+      <div id="map-container">
+        <div class="map-empty" id="mapEmpty">
+          <div class="icon">🗺️</div>
+          <p>Ask about a location, weapon, boss, or secret — the map will appear here.</p>
+        </div>
+        <div id="leaflet-map" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ── Config ────────────────────────────────────────────────────
+// Change this to your backend URL when deployed
+const API_BASE = "http://localhost:5000";
+
+let loading = false;
+let history = [];
+let leafletMap = null;
+let currentMarker = null;
+const messagesEl = document.getElementById("messages");
+const welcomeEl = document.getElementById("welcome");
+const inp = document.getElementById("inp");
+const sendBtn = document.getElementById("sendBtn");
+
+function resize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+
+function onKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+function ask(q) { inp.value = q; resize(inp); send(); }
+
+function scroll() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+function esc(t) {
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// Simple markdown → HTML converter
+function md(text) {
+  return text
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h2>$1</h2>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/^[\-\*] (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>")
+    .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+}
+
+function addMsg(role, content, meta = {}) {
+  if (welcomeEl) welcomeEl.style.display = "none";
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  const avatar = role === "ai" ? "🤖" : "👾";
+
+  let extra = "";
+  if (role === "ai" && meta.provider) {
+    extra += `<br><span class="provider-tag">🆓 ${esc(meta.provider)}</span>`;
+  }
+  if (role === "ai" && meta.wikiUsed) {
+    extra += `<a class="wiki-tag" href="${esc(meta.wikiUsed.url)}" target="_blank">📖 ${esc(meta.wikiUsed.title)}</a>`;
+  }
+
+  const html = role === "ai" ? `<p>${md(content)}</p>${extra}` : esc(content);
+  div.innerHTML = `<div class="msg-avatar">${avatar}</div><div class="msg-bubble">${html}</div>`;
+  messagesEl.appendChild(div);
+  scroll();
+}
+
+function addTyping() {
+  if (welcomeEl) welcomeEl.style.display = "none";
+  const div = document.createElement("div");
+  div.className = "msg ai"; div.id = "typing";
+  div.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  messagesEl.appendChild(div); scroll();
+}
+
+function removeTyping() {
+  const t = document.getElementById("typing");
+  if (t) t.remove();
+}
+
+function showMap(mapData) {
+  if (!mapData || !window.L) return;
+
+  const panel = document.getElementById("mapPanel");
+  const emptyEl = document.getElementById("mapEmpty");
+  const mapEl = document.getElementById("leaflet-map");
+  const infoEl = document.getElementById("mapInfo");
+
+  panel.classList.remove("hidden");
+
+  document.getElementById("mapTitle").textContent = `🗺️ ${String(mapData.game || "Game").toUpperCase()}`;
+  document.getElementById("mapGame").textContent = String(mapData.game || "").toUpperCase();
+  document.getElementById("mapLocationName").textContent = mapData.location?.label || "Location";
+  document.getElementById("mapRegion").textContent = mapData.location?.region ? `📍 ${mapData.location.region}` : "";
+
+  infoEl.style.display = "block";
+  emptyEl.style.display = "none";
+  mapEl.style.display = "block";
+
+  if (leafletMap) {
+    leafletMap.remove();
+    leafletMap = null;
+    currentMarker = null;
+  }
+
+  const W = mapData.mapWidth || 2048;
+  const H = mapData.mapHeight || 2048;
+  const bounds = [[0, 0], [H, W]];
+
+  leafletMap = L.map("leaflet-map", {
+    crs: L.CRS.Simple,
+    minZoom: -2,
+    maxZoom: 2,
+    zoomControl: true,
+  });
+
+  if (mapData.mapImage) L.imageOverlay(mapData.mapImage, bounds).addTo(leafletMap);
+  leafletMap.fitBounds(bounds);
+
+  const x = mapData.location?.x ?? Math.round((mapData.location?.pinX ?? 0.5) * W);
+  const y = mapData.location?.y ?? Math.round((mapData.location?.pinY ?? 0.5) * H);
+
+  const pinY = H - y;
+  const pinX = x;
+
+  currentMarker = L.marker([pinY, pinX]).addTo(leafletMap);
+  currentMarker.bindPopup(`<strong>${esc(mapData.location?.label || "Location")}</strong><br>${esc(mapData.location?.region || "")}`).openPopup();
+  leafletMap.setView([pinY, pinX], 0);
+}
+
+function closeMap() {
+  document.getElementById("mapPanel").classList.add("hidden");
+  if (leafletMap) {
+    leafletMap.remove();
+    leafletMap = null;
+  }
+}
+
+async function send() {
+  const msg = inp.value.trim();
+  if (!msg || loading) return;
+
+  loading = true;
+  sendBtn.disabled = true;
+  inp.value = ""; inp.style.height = "auto";
+
+  addMsg("user", msg);
+  addTyping();
+
+  // Streaming state
+  let fullText   = "";
+  let streamDiv  = null;
+  let bubbleEl   = null;
+  let metaInfo   = {};
+  const bubbleId = `stream-bubble-${Date.now()}`; // Moved here
+
+  try {
+    const response = await fetch(`${API_BASE}/api/chat/stream`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ message: msg, history }),
+    });
+
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+    const reader  = response.body.getReader();
+    const decoder = new TextDecoder();
+    let   buffer  = "";
+
+    // Remove typing indicator and create streaming bubble
+    removeTyping();
+    if (welcomeEl) welcomeEl.style.display = "none";
+
+    streamDiv = document.createElement("div");
+    streamDiv.className = "msg ai";
+    streamDiv.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-bubble" id="${bubbleId}"><span class="cursor">▊</span></div>`;
+    messagesEl.appendChild(streamDiv); // Append to DOM first
+    bubbleEl = document.getElementById(bubbleId); // Now finds it correctly
+    scroll();
+
+    // Read SSE stream
+    while (true) {
+      let done, value;
+      try {
+        ({ done, value } = await reader.read());
+      } catch (readErr) {
+        console.warn("Stream read error:", readErr);
+        break;
+      }
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+
+        try {
+          const event = JSON.parse(line.slice(5).trim());
+
+          // ── delta: new text token ──────────────────────
+          if (event.type === "delta") {
+            fullText += event.text;
+            bubbleEl.innerHTML = `<p>${md(fullText)}</p><span class="cursor">▊</span>`;
+            scroll();
+          }
+
+          // ── meta: game detected ────────────────────────
+          if (event.type === "meta") {
+            if (event.detectedGame) metaInfo.detectedGame = event.detectedGame;
+            if (event.questionType) metaInfo.questionType = event.questionType;
+            if (event.skillLevel)   metaInfo.skillLevel   = event.skillLevel;
+          }
+
+          // ── wiki: wiki source used ─────────────────────
+          if (event.type === "wiki") {
+            metaInfo.wikiUsed = { title: event.title, url: event.url };
+          }
+
+          // ── map: location found ────────────────────────
+          if (event.type === "map") {
+            metaInfo.mapData = event.mapData;
+            // Auto-show map when location detected
+            if (event.mapData) showMap(event.mapData);
+          }
+
+          // ── provider: which AI was used ────────────────
+          if (event.type === "provider") {
+            metaInfo.provider = event.name;
+          }
+
+          // ── status: status message ─────────────────────
+          if (event.type === "status") {
+            bubbleEl.innerHTML = `<span style="color:var(--muted);font-size:12px;font-family:'Share Tech Mono',monospace">${esc(event.message)}</span><span class="cursor">▊</span>`;
+          }
+
+          // ── done: stream complete ──────────────────────
+          if (event.type === "done") {
+            // Remove cursor, add metadata tags
+            let extras = "";
+            if (metaInfo.provider)
+              extras += `<br><span class="provider-tag">🆓 ${esc(metaInfo.provider)}</span>`;
+            if (metaInfo.mapData)
+              extras += `<br><button class="map-btn" onclick='showMap(${JSON.stringify(metaInfo.mapData)})'>🗺️ VIEW ON MAP — ${esc(metaInfo.mapData.location.label)}</button>`;
+
+            bubbleEl.innerHTML = `<p>${md(fullText)}</p>${extras}`;
+            scroll();
+          }
+
+          // ── error ──────────────────────────────────────
+          if (event.type === "error") {
+            bubbleEl.innerHTML = `<p>⚠️ <strong>Error:</strong> ${esc(event.message)}</p>`;
+          }
+
+        } catch (parseErr) {
+          console.warn("SSE parse error:", parseErr);
+        }
+      }
+    }
+
+    // Save to history
+    history.push({ role: "user",      content: msg      });
+    history.push({ role: "assistant", content: fullText  });
+    if (history.length > 20) history = history.slice(-20);
+
+} catch (err) {
+  removeTyping();
+  if (bubbleEl) {
+    bubbleEl.innerHTML = `<p>⚠️ <strong>Error:</strong> ${esc(err.message)}</p>`;
+  } else {
+    addMsg("ai", `⚠️ Error: ${err.message}`);
+  }
+} finally {
+  loading = false;
+  sendBtn.disabled = false;
+  inp.focus();
+}
+}
+</script>
+</body>
+</html>
