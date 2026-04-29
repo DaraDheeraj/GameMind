@@ -1,0 +1,92 @@
+{
+  "elden ring": {
+    "mapImage": "https://static.wikia.nocookie.net/eldenring/images/e/e0/Elden_Ring_Map.jpg",
+    "mapWidth": 2048,
+    "mapHeight": 2048,
+    "locations": {
+      "moonveil katana":        { "x": 1420, "y": 980,  "type": "weapon",  "label": "Moonveil Katana",        "region": "Caelid — Gael Tunnel" },
+      "rivers of blood":        { "x": 1580, "y": 820,  "type": "weapon",  "label": "Rivers of Blood",        "region": "Mountaintops of the Giants" },
+      "margit":                 { "x": 860,  "y": 1100, "type": "boss",    "label": "Margit the Fell Omen",   "region": "Stormhill" },
+      "godrick":                { "x": 680,  "y": 980,  "type": "boss",    "label": "Godrick the Grafted",    "region": "Stormveil Castle" },
+      "radahn":                 { "x": 1560, "y": 1120, "type": "boss",    "label": "Starscourge Radahn",     "region": "Caelid — Redmane Castle" },
+      "malenia":                { "x": 980,  "y": 380,  "type": "boss",    "label": "Malenia Blade of Miquella","region": "Haligtree" },
+      "golden seed":            { "x": 820,  "y": 1060, "type": "item",    "label": "Golden Seed",            "region": "Stormhill — Erdtree Sapling" },
+      "flask of wondrous physick":{ "x": 760, "y": 1140,"type": "item",    "label": "Wondrous Physick",       "region": "Third Church of Marika" },
+      "limgrave":               { "x": 780,  "y": 1200, "type": "region",  "label": "Limgrave",               "region": "Starting Area" },
+      "roundtable hold":        { "x": 900,  "y": 1050, "type": "location","label": "Roundtable Hold",        "region": "Hub Area" }
+    }
+  },
+
+  "gta v": {
+    "mapImage": "https://static.wikia.nocookie.net/gtawiki/images/8/8c/Map-GTAV.jpg",
+    "mapWidth": 2048,
+    "mapHeight": 2048,
+    "locations": {
+      "diamond casino":         { "x": 1180, "y": 720,  "type": "location","label": "Diamond Casino",         "region": "Vinewood" },
+      "mount chiliad":          { "x": 580,  "y": 480,  "type": "location","label": "Mount Chiliad",          "region": "Blaine County" },
+      "los santos customs":     { "x": 960,  "y": 1100, "type": "location","label": "LS Customs",             "region": "La Mesa" },
+      "trevor's trailer":       { "x": 460,  "y": 560,  "type": "location","label": "Trevor's Trailer",       "region": "Sandy Shores" },
+      "military base":          { "x": 380,  "y": 920,  "type": "location","label": "Fort Zancudo",           "region": "Zancudo River" },
+      "ufo easter egg":         { "x": 580,  "y": 440,  "type": "secret",  "label": "UFO Easter Egg",         "region": "Mount Chiliad Summit" },
+      "hidden packages":        { "x": 860,  "y": 1380, "type": "secret",  "label": "Hidden Package",         "region": "Paleto Cove Underwater" },
+      "maze bank":              { "x": 980,  "y": 980,  "type": "location","label": "Maze Bank Tower",        "region": "Downtown LS" },
+      "lester's house":         { "x": 820,  "y": 860,  "type": "location","label": "Lester's House",         "region": "El Burro Heights" },
+      "altruist camp":          { "x": 320,  "y": 760,  "type": "secret",  "label": "Altruist Cult Camp",     "region": "Chiliad Mountain State Wilderness" }
+    }
+  },
+
+  "minecraft": {
+    "mapImage": "https://static.wikia.nocookie.net/minecraft/images/c/cd/Minecraft_landscape.png",
+    "mapWidth": 1024,
+    "mapHeight": 1024,
+    "locations": {
+      "stronghold":             { "x": 512,  "y": 512,  "type": "structure","label": "Stronghold",            "region": "Underground — End Portal" },
+      "nether fortress":        { "x": 200,  "y": 200,  "type": "structure","label": "Nether Fortress",       "region": "Nether — Blaze Spawner" },
+      "woodland mansion":       { "x": 800,  "y": 300,  "type": "structure","label": "Woodland Mansion",      "region": "Dark Oak Forest" },
+      "ancient city":           { "x": 400,  "y": 700,  "type": "structure","label": "Ancient City",          "region": "Deep Dark — Warden" },
+      "ocean monument":         { "x": 650,  "y": 400,  "type": "structure","label": "Ocean Monument",        "region": "Deep Ocean" },
+      "desert temple":          { "x": 700,  "y": 600,  "type": "structure","label": "Desert Temple",         "region": "Desert Biome" },
+      "village":                { "x": 300,  "y": 500,  "type": "structure","label": "Village",               "region": "Plains / Desert / Taiga" },
+      "end city":               { "x": 512,  "y": 100,  "type": "structure","label": "End City",              "region": "The End — Elytra" },
+      "bastian remnant":        { "x": 100,  "y": 600,  "type": "structure","label": "Bastion Remnant",       "region": "Nether — Piglin Brutes" },
+      "ruined portal":          { "x": 900,  "y": 800,  "type": "structure","label": "Ruined Portal",         "region": "Overworld / Nether" }
+    }
+  },
+
+  "zelda breath of the wild": {
+    "mapImage": "https://static.wikia.nocookie.net/zelda/images/f/f5/BotW_Map.png",
+    "mapWidth": 2048,
+    "mapHeight": 2048,
+    "locations": {
+      "hyrule castle":          { "x": 1020, "y": 980,  "type": "location","label": "Hyrule Castle",          "region": "Central Hyrule" },
+      "akkala ancient tech lab":{ "x": 1580, "y": 320,  "type": "location","label": "Akkala Tech Lab",        "region": "Akkala" },
+      "master sword":           { "x": 640,  "y": 560,  "type": "weapon",  "label": "Master Sword",           "region": "Korok Forest — Lost Woods" },
+      "great fairy fountain":   { "x": 760,  "y": 880,  "type": "location","label": "Great Fairy Fountain",   "region": "Kakariko Village" },
+      "eventide island":        { "x": 1720, "y": 1480, "type": "secret",  "label": "Eventide Island",        "region": "Necluda Sea — Survival Challenge" },
+      "dragon's exile":         { "x": 240,  "y": 1200, "type": "secret",  "label": "Selmie's Spot",          "region": "Hebra Mountains" },
+      "zora's domain":          { "x": 1360, "y": 560,  "type": "location","label": "Zora's Domain",          "region": "Lanayru" },
+      "death mountain":         { "x": 1200, "y": 440,  "type": "location","label": "Death Mountain",         "region": "Eldin — Goron City" },
+      "vah medoh":              { "x": 280,  "y": 400,  "type": "boss",    "label": "Divine Beast Vah Medoh", "region": "Rito Village" },
+      "plateau tower":          { "x": 920,  "y": 1200, "type": "location","label": "Great Plateau Tower",    "region": "Starting Area" }
+    }
+  },
+
+  "cyberpunk 2077": {
+    "mapImage": "https://static.wikia.nocookie.net/cyberpunk/images/c/c5/NightCityMap.png",
+    "mapWidth": 2048,
+    "mapHeight": 2048,
+    "locations": {
+      "corpo plaza":            { "x": 1020, "y": 860,  "type": "location","label": "Corpo Plaza",            "region": "City Center" },
+      "afterlife bar":          { "x": 760,  "y": 980,  "type": "location","label": "Afterlife Bar",          "region": "Watson — Mercenary Hub" },
+      "mantis blades":          { "x": 880,  "y": 720,  "type": "weapon",  "label": "Mantis Blades",          "region": "City Center Ripperdoc" },
+      "johnny's porsche":       { "x": 560,  "y": 1120, "type": "secret",  "label": "Johnny's Porsche 911",   "region": "Badlands — Hidden" },
+      "secret ending location": { "x": 980,  "y": 640,  "type": "secret",  "label": "Secret Ending Trigger",  "region": "Embers — Hanako Meeting" },
+      "judy's apartment":       { "x": 700,  "y": 900,  "type": "location","label": "Judy's Apartment",       "region": "Kabuki — Watson" },
+      "arasaka tower":          { "x": 1060, "y": 820,  "type": "location","label": "Arasaka Tower",          "region": "City Center" },
+      "heist location":         { "x": 1080, "y": 800,  "type": "location","label": "Konpeki Plaza",          "region": "Japantown — The Heist" },
+      "militech data":          { "x": 420,  "y": 1280, "type": "secret",  "label": "Militech Cache",         "region": "Badlands" },
+      "peak view":              { "x": 980,  "y": 580,  "type": "location","label": "Peak View Hotel",        "region": "City Center Rooftop" }
+    }
+  }
+}
+
