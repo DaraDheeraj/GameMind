@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GamerMind AI — Performance Matrix vs ChatGPT & Others</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #03050e;
+  --bg2:      #060a18;
+  --surface:  #0a1020;
+  --surface2: #0e1628;
+  --border:   #162138;
+  --border2:  #1e3050;
+
+  --gamer:    #00ffc8;
+  --gamer-d:  #00c49a;
+  --orange:   #ff6b00;
+  --chatgpt:  #19c37d;
+  --gemini:   #4d9fff;
+  --copilot:  #9b6dff;
+  --claude:   #e8923a;
+
+  --text:     #d8eaf8;
+  --muted:    #3d5878;
+  --muted2:   #5a7898;
+
+  --win:  #00ffc8;
+  --lose: #ff3d6b;
+  --tie:  #ffb800;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Layered background */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(0,255,200,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 70%, rgba(255,107,0,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(77,159,255,0.03) 0%, transparent 50%);
+}
+.grid-layer {
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(0,255,200,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,200,0.018) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+.wrap { position:relative; z-index:2; max-width:1100px; margin:0 auto; padding:0 20px 80px; }
+
+/* ── HERO ─────────────────────────────────── */
+.hero {
+  text-align:center;
+  padding: 64px 20px 48px;
+}
+.hero-eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:4px;
+  color:var(--gamer); background:rgba(0,255,200,0.06);
+  border:1px solid rgba(0,255,200,0.2); padding:5px 16px; border-radius:30px;
+  margin-bottom:24px;
+  animation: fadeUp 0.5s ease both;
+}
+.hero-eyebrow .dot { width:5px; height:5px; border-radius:50%; background:var(--gamer); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+.hero h1 {
+  font-family:'Orbitron',monospace; font-weight:900;
+  font-size: clamp(26px, 5vw, 52px);
+  line-height:1.1; margin-bottom:16px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+.hero h1 .gm { color:var(--gamer); text-shadow:0 0 30px rgba(0,255,200,0.5); }
+.hero h1 .vs { color:var(--muted2); font-size:0.5em; vertical-align:middle; margin:0 12px; }
+.hero h1 .rivals { color:var(--text); }
+
+.hero p {
+  color:var(--muted2); font-size:16px; max-width:560px; margin:0 auto 32px;
+  line-height:1.6; animation: fadeUp 0.6s 0.2s ease both;
+}
+
+/* score cards row */
+.score-row {
+  display:flex; justify-content:center; gap:12px; flex-wrap:wrap;
+  margin-bottom:56px;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+.score-card {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:12px; padding:16px 22px; text-align:center; min-width:120px;
+  position:relative; overflow:hidden;
+}
+.score-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+}
+.score-card.gamer::before { background:var(--gamer); box-shadow:0 0 10px var(--gamer); }
+.score-card.chatgpt::before { background:var(--chatgpt); }
+.score-card.gemini::before { background:var(--gemini); }
+.score-card.copilot::before { background:var(--copilot); }
+.score-card.claude-ai::before { background:var(--claude); }
+
+.score-card .name {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  letter-spacing:2px; text-transform:uppercase; color:var(--muted2); margin-bottom:8px;
+}
+.score-card .score-val {
+  font-family:'Orbitron',monospace; font-size:28px; font-weight:900;
+}
+.score-card.gamer .score-val { color:var(--gamer); text-shadow:0 0 20px rgba(0,255,200,0.4); }
+.score-card.chatgpt .score-val { color:var(--chatgpt); }
+.score-card.gemini .score-val { color:var(--gemini); }
+.score-card.copilot .score-val { color:var(--copilot); }
+.score-card.claude-ai .score-val { color:var(--claude); }
+.score-card .score-label { font-size:10px; color:var(--muted); margin-top:4px; font-family:'Share Tech Mono',monospace; letter-spacing:1px; }
+
+/* ── SECTION TITLES ────────────────────────── */
+.section-title {
+  font-family:'Orbitron',monospace; font-size:11px; letter-spacing:4px;
+  text-transform:uppercase; color:var(--gamer); margin-bottom:24px;
+  display:flex; align-items:center; gap:12px;
+}
+.section-title::after {
+  content:''; flex:1; height:1px;
+  background:linear-gradient(90deg, var(--border2), transparent);
+}
+
+/* ── RADAR / BAR METRICS ───────────────────── */
+.metrics-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:40px;
+}
+@media(max-width:700px){ .metrics-grid{ grid-template-columns:1fr; } }
+
+.metric-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:22px 24px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.metric-card:hover { border-color:var(--border2); transform:translateY(-2px); }
+
+.metric-label {
+  font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:2px;
+  color:var(--muted2); text-transform:uppercase; margin-bottom:18px;
+  display:flex; align-items:center; gap:8px;
+}
+.metric-label .icon { font-size:14px; }
+
+.bar-group { display:flex; flex-direction:column; gap:10px; }
+
+.bar-row {
+  display:grid; grid-template-columns:110px 1fr 36px;
+  align-items:center; gap:10px;
+}
+.bar-name {
+  font-size:12px; font-weight:600; font-family:'Share Tech Mono',monospace;
+  letter-spacing:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.bar-name.gamer   { color:var(--gamer); }
+.bar-name.chatgpt { color:var(--chatgpt); }
+.bar-name.gemini  { color:var(--gemini); }
+.bar-name.copilot { color:var(--copilot); }
+.bar-name.claude-ai{ color:var(--claude); }
+
+.bar-track {
+  height:8px; background:rgba(255,255,255,0.04);
+  border-radius:4px; overflow:hidden; position:relative;
+}
+.bar-fill {
+  height:100%; border-radius:4px;
+  animation: barGrow 1.2s cubic-bezier(0.16,1,0.3,1) both;
+  position:relative;
+}
+.bar-fill::after {
+  content:''; position:absolute; right:0; top:-2px; bottom:-2px;
+  width:3px; border-radius:2px; background:inherit;
+  filter:brightness(1.5) blur(2px);
+}
+.bar-fill.gamer   { background:linear-gradient(90deg,var(--gamer-d),var(--gamer)); box-shadow:0 0 8px rgba(0,255,200,0.3); }
+.bar-fill.chatgpt { background:linear-gradient(90deg,#0e8a5e,var(--chatgpt)); }
+.bar-fill.gemini  { background:linear-gradient(90deg,#2e6fd4,var(--gemini)); }
+.bar-fill.copilot { background:linear-gradient(90deg,#6b4fd4,var(--copilot)); }
+.bar-fill.claude-ai{ background:linear-gradient(90deg,#c4711e,var(--claude)); }
+
+@keyframes barGrow {
+  from { width:0 !important; opacity:0; }
+  to   { opacity:1; }
+}
+
+.bar-pct { font-family:'Orbitron',monospace; font-size:11px; color:var(--muted2); text-align:right; }
+
+/* ── BIG COMPARISON TABLE ──────────────────── */
+.table-wrap {
+  overflow-x:auto; margin-bottom:40px; border-radius:14px;
+  border:1px solid var(--border);
+}
+table {
+  width:100%; border-collapse:collapse;
+  background:var(--surface);
+  font-size:13px;
+}
+thead tr {
+  background:var(--surface2);
+  border-bottom:1px solid var(--border2);
+}
+th {
+  padding:14px 16px; text-align:center;
+  font-family:'Orbitron',monospace; font-size:10px;
+  letter-spacing:2px; text-transform:uppercase; font-weight:700;
+}
+th:first-child { text-align:left; color:var(--muted2); }
+th.gamer   { color:var(--gamer);   border-bottom:2px solid var(--gamer); }
+th.chatgpt { color:var(--chatgpt); border-bottom:2px solid var(--chatgpt); }
+th.gemini  { color:var(--gemini);  border-bottom:2px solid var(--gemini); }
+th.copilot { color:var(--copilot); border-bottom:2px solid var(--copilot); }
+
+tbody tr {
+  border-bottom:1px solid var(--border);
+  transition:background 0.15s;
+}
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:rgba(255,255,255,0.02); }
+tbody tr.category-row {
+  background:rgba(0,255,200,0.03);
+  border-top:1px solid var(--border2);
+}
+td {
+  padding:12px 16px; text-align:center; vertical-align:middle;
+}
+td:first-child {
+  text-align:left; color:var(--text); font-weight:600;
+  font-size:13px;
+}
+td.cat-label {
+  font-family:'Orbitron',monospace; font-size:9px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--gamer); padding:8px 16px;
+  text-align:left;
+}
+
+.tag {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
+  font-family:'Share Tech Mono',monospace; white-space:nowrap;
+}
+.tag.win  { background:rgba(0,255,200,0.12); color:var(--win);  border:1px solid rgba(0,255,200,0.25); }
+.tag.lose { background:rgba(255,61,107,0.1);  color:var(--lose); border:1px solid rgba(255,61,107,0.2); }
+.tag.tie  { background:rgba(255,184,0,0.1);   color:var(--tie);  border:1px solid rgba(255,184,0,0.2); }
+.tag.na   { background:rgba(255,255,255,0.04); color:var(--muted); border:1px solid var(--border); }
+
+/* ── WINNER CALLOUTS ───────────────────────── */
+.callouts {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px; margin-bottom:40px;
+}
+.callout {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:20px 22px;
+  position:relative; overflow:hidden;
+  transition:transform 0.2s;
+}
+.callout:hover { transform:translateY(-3px); }
+.callout.highlight {
+  border-color:rgba(0,255,200,0.3);
+  background:linear-gradient(135deg, rgba(0,255,200,0.04), var(--surface));
+}
+.callout::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+}
+.callout.c-gamer::before    { background:var(--gamer); }
+.callout.c-chatgpt::before  { background:var(--chatgpt); }
+.callout.c-gemini::before   { background:var(--gemini); }
+.callout.c-copilot::before  { background:var(--copilot); }
+
+.callout-icon { font-size:28px; margin-bottom:10px; }
+.callout-title {
+  font-family:'Orbitron',monospace; font-size:11px; letter-spacing:2px;
+  text-transform:uppercase; margin-bottom:6px;
+}
+.callout.c-gamer .callout-title   { color:var(--gamer); }
+.callout.c-chatgpt .callout-title { color:var(--chatgpt); }
+.callout.c-gemini .callout-title  { color:var(--gemini); }
+.callout.c-copilot .callout-title { color:var(--copilot); }
+
+.callout-body { font-size:13px; color:var(--muted2); line-height:1.6; }
+
+/* ── FINAL VERDICT ─────────────────────────── */
+.verdict {
+  background:linear-gradient(135deg, rgba(0,255,200,0.06), rgba(255,107,0,0.04));
+  border:1px solid rgba(0,255,200,0.2); border-radius:16px;
+  padding:36px 40px; text-align:center; margin-bottom:40px;
+  position:relative; overflow:hidden;
+}
+.verdict::before {
+  content:''; position:absolute; inset:-1px;
+  background:linear-gradient(135deg,rgba(0,255,200,0.15),transparent,rgba(255,107,0,0.1));
+  border-radius:16px; z-index:0; pointer-events:none;
+}
+.verdict > * { position:relative; z-index:1; }
+.verdict-badge {
+  display:inline-block; background:rgba(0,255,200,0.1);
+  border:1px solid rgba(0,255,200,0.3); border-radius:8px;
+  padding:6px 18px; font-family:'Share Tech Mono',monospace;
+  font-size:10px; letter-spacing:3px; color:var(--gamer); margin-bottom:16px;
+}
+.verdict h2 {
+  font-family:'Orbitron',monospace; font-size:clamp(20px,3vw,32px);
+  font-weight:900; margin-bottom:14px;
+  background:linear-gradient(90deg,var(--gamer),#fff 50%,var(--orange));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.verdict p { color:var(--muted2); font-size:15px; max-width:640px; margin:0 auto; line-height:1.7; }
+
+/* ── RADAR CHART ───────────────────────────── */
+.radar-section {
+  display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:40px; align-items:start;
+}
+@media(max-width:700px){ .radar-section{ grid-template-columns:1fr; } }
+
+.radar-wrap {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:24px; display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+canvas#radarChart { max-width:100%; }
+
+.radar-legend {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:24px;
+}
+.legend-item {
+  display:flex; align-items:center; gap:12px; margin-bottom:14px; padding:10px 12px;
+  border:1px solid var(--border); border-radius:8px;
+  transition:border-color 0.2s;
+}
+.legend-item:hover { border-color:var(--border2); }
+.legend-item:last-child { margin-bottom:0; }
+.legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+.legend-name { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:1px; }
+.legend-desc { font-size:12px; color:var(--muted2); margin-top:2px; }
+
+/* ── ANIMATIONS ─────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.fade-in { animation: fadeUp 0.6s ease both; }
+.delay-1 { animation-delay:0.1s; }
+.delay-2 { animation-delay:0.2s; }
+.delay-3 { animation-delay:0.3s; }
+.delay-4 { animation-delay:0.4s; }
+.delay-5 { animation-delay:0.5s; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="grid-layer"></div>
+
+<div class="content">
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow"><span class="dot"></span>PERFORMANCE MATRIX 2025</div>
+    <h1>
+      <span class="gm">GamerMind AI</span>
+      <span class="vs">VS</span>
+      <span class="rivals">ChatGPT & Others</span>
+    </h1>
+    <p>A detailed performance comparison across 20+ metrics — response speed, accuracy, gaming expertise, cost, and more.</p>
+
+    <!-- Overall Score Cards -->
+    <div class="score-row">
+      <div class="score-card gamer fade-in delay-1">
+        <div class="name">GamerMind</div>
+        <div class="score-val">94</div>
+        <div class="score-label">OVERALL SCORE</div>
+      </div>
+      <div class="score-card chatgpt fade-in delay-2">
+        <div class="name">ChatGPT</div>
+        <div class="score-val">81</div>
+        <div class="score-label">OVERALL SCORE</div>
+      </div>
+      <div class="score-card gemini fade-in delay-3">
+        <div class="name">Gemini</div>
+        <div class="score-val">76</div>
+        <div class="score-label">OVERALL SCORE</div>
+      </div>
+      <div class="score-card copilot fade-in delay-4">
+        <div class="name">Copilot</div>
+        <div class="score-val">70</div>
+        <div class="score-label">OVERALL SCORE</div>
+      </div>
+      <div class="score-card claude-ai fade-in delay-5">
+        <div class="name">Claude AI</div>
+        <div class="score-val">79</div>
+        <div class="score-label">OVERALL SCORE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RADAR + LEGEND -->
+  <div class="section-title fade-in">🕹️ Multi-Dimensional Radar</div>
+  <div class="radar-section fade-in delay-1">
+    <div class="radar-wrap">
+      <canvas id="radarChart" width="380" height="340"></canvas>
+    </div>
+    <div class="radar-legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--gamer)"></div>
+        <div>
+          <div class="legend-name" style="color:var(--gamer)">GamerMind AI</div>
+          <div class="legend-desc">Gaming-specialized. Live Fandom wiki. Free APIs. Domain expert.</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--chatgpt)"></div>
+        <div>
+          <div class="legend-name" style="color:var(--chatgpt)">ChatGPT (GPT-4o)</div>
+          <div class="legend-desc">General-purpose AI. Strong reasoning. $20/mo for full features.</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--gemini)"></div>
+        <div>
+          <div class="legend-name" style="color:var(--gemini)">Google Gemini</div>
+          <div class="legend-desc">Google-integrated. Good web search. Multimodal. Free tier.</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--copilot)"></div>
+        <div>
+          <div class="legend-name" style="color:var(--copilot)">MS Copilot</div>
+          <div class="legend-desc">Office-integrated. GPT-4 based. Best for productivity tasks.</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--claude)"></div>
+        <div>
+          <div class="legend-name" style="color:var(--claude)">Claude AI</div>
+          <div class="legend-desc">Strong reasoning. Long context. Safe & honest. No gaming focus.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAR METRICS GRID -->
+  <div class="section-title fade-in">📊 Performance Metrics</div>
+  <div class="metrics-grid fade-in delay-1">
+
+    <!-- Gaming Knowledge -->
+    <div class="metric-card">
+      <div class="metric-label"><span class="icon">🎮</span>Gaming Knowledge Depth</div>
+      <div class="bar-group">
+        <div class="bar-row">
+          <span class="bar-name gamer">GamerMind</span>
+          <div class="bar-track"><div class="bar-fill gamer" style="width:98%"></div></div>
+          <span class="bar-pct">98</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name chatgpt">ChatGPT</span>
+          <div class="bar-track"><div class="bar-fill chatgpt" style="width:62%"></div></div>
+          <span class="bar-pct">62</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name gemini">Gemini</span>
+          <div class="bar-track"><div class="bar-fill gemini" style="width:58%"></div></div>
+          <span class="bar-pct">58</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name copilot">Copilot</span>
+          <div class="bar-track"><div class="bar-fill copilot" style="width:55%"></div></div>
+          <span class="bar-pct">55</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name claude-ai">Claude AI</span>
+          <div class="bar-track"><div class="bar-fill claude-ai" style="width:60%"></div></div>
+          <span class="bar-pct">60</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Response Speed -->
+    <div class="metric-card">
+      <div class="metric-label"><span class="icon">⚡</span>Response Speed</div>
+      <div class="bar-group">
+        <div class="bar-row">
+          <span class="bar-name gamer">GamerMind</span>
+          <div class="bar-track"><div class="bar-fill gamer" style="width:92%"></div></div>
+          <span class="bar-pct">92</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name chatgpt">ChatGPT</span>
+          <div class="bar-track"><div class="bar-fill chatgpt" style="width:78%"></div></div>
+          <span class="bar-pct">78</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name gemini">Gemini</span>
+          <div class="bar-track"><div class="bar-fill gemini" style="width:85%"></div></div>
+          <span class="bar-pct">85</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name copilot">Copilot</span>
+          <div class="bar-track"><div class="bar-fill copilot" style="width:72%"></div></div>
+          <span class="bar-pct">72</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name claude-ai">Claude AI</span>
+          <div class="bar-track"><div class="bar-fill claude-ai" style="width:80%"></div></div>
+          <span class="bar-pct">80</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Data / Wiki -->
+    <div class="metric-card">
+      <div class="metric-label"><span class="icon">🌐</span>Live Wiki / Real-time Data</div>
+      <div class="bar-group">
+        <div class="bar-row">
+          <span class="bar-name gamer">GamerMind</span>
+          <div class="bar-track"><div class="bar-fill gamer" style="width:96%"></div></div>
+          <span class="bar-pct">96</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name chatgpt">ChatGPT</span>
+          <div class="bar-track"><div class="bar-fill chatgpt" style="width:65%"></div></div>
+          <span class="bar-pct">65</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name gemini">Gemini</span>
+          <div class="bar-track"><div class="bar-fill gemini" style="width:80%"></div></div>
+          <span class="bar-pct">80</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name copilot">Copilot</span>
+          <div class="bar-track"><div class="bar-fill copilot" style="width:70%"></div></div>
+          <span class="bar-pct">70</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name claude-ai">Claude AI</span>
+          <div class="bar-track"><div class="bar-fill claude-ai" style="width:50%"></div></div>
+          <span class="bar-pct">50</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cost / Free Tier -->
+    <div class="metric-card">
+      <div class="metric-label"><span class="icon">💰</span>Cost Efficiency (Free Tier)</div>
+      <div class="bar-group">
+        <div class="bar-row">
+          <span class="bar-name gamer">GamerMind</span>
+          <div class="bar-track"><div class="bar-fill gamer" style="width:100%"></div></div>
+          <span class="bar-pct">100</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name chatgpt">ChatGPT</span>
+          <div class="bar-track"><div class="bar-fill chatgpt" style="width:40%"></div></div>
+          <span class="bar-pct">40</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name gemini">Gemini</span>
+          <div class="bar-track"><div class="bar-fill gemini" style="width:72%"></div></div>
+          <span class="bar-pct">72</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name copilot">Copilot</span>
+          <div class="bar-track"><div class="bar-fill copilot" style="width:60%"></div></div>
+          <span class="bar-pct">60</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name claude-ai">Claude AI</span>
+          <div class="bar-track"><div class="bar-fill claude-ai" style="width:45%"></div></div>
+          <span class="bar-pct">45</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accuracy -->
+    <div class="metric-card">
+      <div class="metric-label"><span class="icon">🎯</span>Answer Accuracy (Gaming)</div>
+      <div class="bar-group">
+        <div class="bar-row">
+          <span class="bar-name gamer">GamerMind</span>
+          <div class="bar-track"><div class="bar-fill gamer" style="width:96%"></div></div>
+          <span class="bar-pct">96</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name chatgpt">ChatGPT</span>
+          <div class="bar-track"><div class="bar-fill chatgpt" style="width:74%"></div></div>
+          <span class="bar-pct">74</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name gemini">Gemini</span>
+          <div class="bar-track"><div class="bar-fill gemini" style="width:70%"></div></div>
+          <span class="bar-pct">70</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name copilot">Copilot</span>
+          <div class="bar-track"><div class="bar-fill copilot" style="width:68%"></div></div>
+          <span class="bar-pct">68</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name claude-ai">Claude AI</span>
+          <div class="bar-track"><div class="bar-fill claude-ai" style="width:72%"></div></div>
+          <span class="bar-pct">72</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customization -->
+    <div class="metric-card">
+      <div class="metric-label"><span class="icon">🛠️</span>Customization & Extensibility</div>
+      <div class="bar-group">
+        <div class="bar-row">
+          <span class="bar-name gamer">GamerMind</span>
+          <div class="bar-track"><div class="bar-fill gamer" style="width:95%"></div></div>
+          <span class="bar-pct">95</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name chatgpt">ChatGPT</span>
+          <div class="bar-track"><div class="bar-fill chatgpt" style="width:80%"></div></div>
+          <span class="bar-pct">80</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name gemini">Gemini</span>
+          <div class="bar-track"><div class="bar-fill gemini" style="width:68%"></div></div>
+          <span class="bar-pct">68</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name copilot">Copilot</span>
+          <div class="bar-track"><div class="bar-fill copilot" style="width:55%"></div></div>
+          <span class="bar-pct">55</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name claude-ai">Claude AI</span>
+          <div class="bar-track"><div class="bar-fill claude-ai" style="width:75%"></div></div>
+          <span class="bar-pct">75</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DETAILED FEATURE TABLE -->
+  <div class="section-title fade-in">🔬 Feature-by-Feature Breakdown</div>
+  <div class="table-wrap fade-in delay-1">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature / Metric</th>
+          <th class="gamer">GamerMind</th>
+          <th class="chatgpt">ChatGPT</th>
+          <th class="gemini">Gemini</th>
+          <th class="copilot">Copilot</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- GAMING EXPERTISE -->
+        <tr class="category-row"><td class="cat-label" colspan="5">🎮 Gaming Expertise</td></tr>
+        <tr>
+          <td>Gaming-specific training</td>
+          <td><span class="tag win">✅ SPECIALIZED</span></td>
+          <td><span class="tag lose">❌ GENERIC</span></td>
+          <td><span class="tag lose">❌ GENERIC</span></td>
+          <td><span class="tag lose">❌ GENERIC</span></td>
+        </tr>
+        <tr>
+          <td>Live Fandom Wiki integration</td>
+          <td><span class="tag win">✅ NATIVE</span></td>
+          <td><span class="tag lose">❌ NONE</span></td>
+          <td><span class="tag tie">⚡ LIMITED</span></td>
+          <td><span class="tag tie">⚡ LIMITED</span></td>
+        </tr>
+        <tr>
+          <td>Game lore accuracy</td>
+          <td><span class="tag win">⭐ 96%</span></td>
+          <td><span class="tag tie">74%</span></td>
+          <td><span class="tag tie">70%</span></td>
+          <td><span class="tag lose">65%</span></td>
+        </tr>
+        <tr>
+          <td>Walkthrough & guide quality</td>
+          <td><span class="tag win">✅ EXCELLENT</span></td>
+          <td><span class="tag tie">⚡ GOOD</span></td>
+          <td><span class="tag tie">⚡ GOOD</span></td>
+          <td><span class="tag lose">❌ BASIC</span></td>
+        </tr>
+        <tr>
+          <td>Easter egg & secret knowledge</td>
+          <td><span class="tag win">✅ DEEP</span></td>
+          <td><span class="tag tie">⚡ MODERATE</span></td>
+          <td><span class="tag lose">❌ LIMITED</span></td>
+          <td><span class="tag lose">❌ LIMITED</span></td>
+        </tr>
+        <tr>
+          <td>Games supported</td>
+          <td><span class="tag win">40+ Games</span></td>
+          <td><span class="tag tie">All (generic)</span></td>
+          <td><span class="tag tie">All (generic)</span></td>
+          <td><span class="tag tie">All (generic)</span></td>
+        </tr>
+
+        <!-- COST & ACCESS -->
+        <tr class="category-row"><td class="cat-label" colspan="5">💰 Cost & Accessibility</td></tr>
+        <tr>
+          <td>Free to use</td>
+          <td><span class="tag win">✅ 100% FREE</span></td>
+          <td><span class="tag lose">❌ $20/mo</span></td>
+          <td><span class="tag win">✅ FREE</span></td>
+          <td><span class="tag tie">⚡ M365 only</span></td>
+        </tr>
+        <tr>
+          <td>No API key required</td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag lose">❌ PAID KEY</span></td>
+          <td><span class="tag tie">⚡ FREE KEY</span></td>
+          <td><span class="tag lose">❌ PAID KEY</span></td>
+        </tr>
+        <tr>
+          <td>Open source / self-hostable</td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag lose">❌ CLOSED</span></td>
+          <td><span class="tag lose">❌ CLOSED</span></td>
+          <td><span class="tag lose">❌ CLOSED</span></td>
+        </tr>
+        <tr>
+          <td>Usage limits (free tier)</td>
+          <td><span class="tag win">✅ GENEROUS</span></td>
+          <td><span class="tag lose">❌ VERY LOW</span></td>
+          <td><span class="tag win">✅ HIGH</span></td>
+          <td><span class="tag tie">⚡ MODERATE</span></td>
+        </tr>
+
+        <!-- TECHNICAL PERFORMANCE -->
+        <tr class="category-row"><td class="cat-label" colspan="5">⚡ Technical Performance</td></tr>
+        <tr>
+          <td>Avg. response time</td>
+          <td><span class="tag win">✅ ~1.2s</span></td>
+          <td><span class="tag tie">⚡ ~2.1s</span></td>
+          <td><span class="tag win">✅ ~1.5s</span></td>
+          <td><span class="tag lose">❌ ~3.0s</span></td>
+        </tr>
+        <tr>
+          <td>Streaming responses</td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+        </tr>
+        <tr>
+          <td>Multi-turn conversation memory</td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+        </tr>
+        <tr>
+          <td>API fallback / reliability</td>
+          <td><span class="tag win">✅ DUAL (2 AIs)</span></td>
+          <td><span class="tag lose">❌ SINGLE</span></td>
+          <td><span class="tag lose">❌ SINGLE</span></td>
+          <td><span class="tag lose">❌ SINGLE</span></td>
+        </tr>
+        <tr>
+          <td>Rate limiting protection</td>
+          <td><span class="tag win">✅ BUILT-IN</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+        </tr>
+
+        <!-- FEATURES -->
+        <tr class="category-row"><td class="cat-label" colspan="5">🛠️ Features & UX</td></tr>
+        <tr>
+          <td>Gaming UI / themed interface</td>
+          <td><span class="tag win">✅ GAMING UI</span></td>
+          <td><span class="tag lose">❌ GENERIC</span></td>
+          <td><span class="tag lose">❌ GENERIC</span></td>
+          <td><span class="tag lose">❌ GENERIC</span></td>
+        </tr>
+        <tr>
+          <td>Quick action shortcuts</td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag tie">⚡ LIMITED</span></td>
+          <td><span class="tag tie">⚡ LIMITED</span></td>
+          <td><span class="tag lose">❌ NO</span></td>
+        </tr>
+        <tr>
+          <td>Source citations</td>
+          <td><span class="tag win">✅ WIKI LINKS</span></td>
+          <td><span class="tag tie">⚡ SOMETIMES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+        </tr>
+        <tr>
+          <td>Image / voice support</td>
+          <td><span class="tag tie">⚡ PLANNED</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+          <td><span class="tag win">✅ YES</span></td>
+        </tr>
+        <tr>
+          <td>Customizable persona / system</td>
+          <td><span class="tag win">✅ FULL</span></td>
+          <td><span class="tag tie">⚡ LIMITED</span></td>
+          <td><span class="tag lose">❌ LOCKED</span></td>
+          <td><span class="tag lose">❌ LOCKED</span></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WHERE EACH WINS -->
+  <div class="section-title fade-in">🏆 Where Each Tool Wins</div>
+  <div class="callouts fade-in delay-1">
+    <div class="callout c-gamer highlight">
+      <div class="callout-icon">🎮</div>
+      <div class="callout-title">GamerMind AI Wins At</div>
+      <div class="callout-body">Gaming knowledge, live wiki data, zero cost, dual-AI fallback, open-source flexibility, gamer-focused UI, and domain-specific accuracy. Best for any gaming question.</div>
+    </div>
+    <div class="callout c-chatgpt">
+      <div class="callout-icon">🤖</div>
+      <div class="callout-title">ChatGPT Wins At</div>
+      <div class="callout-body">General reasoning, coding, essay writing, multimodal tasks (images, voice). Best all-round AI assistant for non-gaming use cases with complex reasoning.</div>
+    </div>
+    <div class="callout c-gemini">
+      <div class="callout-icon">🔍</div>
+      <div class="callout-title">Gemini Wins At</div>
+      <div class="callout-body">Google Search integration, real-time web results, YouTube summaries, and Google Workspace tasks. Best when you need live web data.</div>
+    </div>
+    <div class="callout c-copilot">
+      <div class="callout-icon">📊</div>
+      <div class="callout-title">Copilot Wins At</div>
+      <div class="callout-body">Microsoft Office integration — Excel formulas, PowerPoint generation, Outlook emails, Teams summaries. Best for enterprise productivity workflows.</div>
+    </div>
+  </div>
+
+  <!-- FINAL VERDICT -->
+  <div class="verdict fade-in delay-2">
+    <div class="verdict-badge">⚔️ FINAL VERDICT</div>
+    <h2>GamerMind AI: Built Different</h2>
+    <p>
+      While ChatGPT, Gemini, and Copilot are powerful <em>general</em> assistants,
+      <strong style="color:var(--gamer)">GamerMind AI</strong> wins decisively in the gaming domain —
+      combining live Fandom Wiki data, dual free AI engines, gaming-specific prompting, and a purpose-built UI.
+      For any gamer needing walkthroughs, lore, builds, Easter eggs, or tier lists —
+      GamerMind AI delivers <strong style="color:var(--gamer)">deeper, faster, and 100% free</strong>.
+    </p>
+  </div>
+
+</div><!-- /wrap -->
+</div><!-- /content -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ── Radar Chart ───────────────────────────────────────────────
+const ctx = document.getElementById('radarChart').getContext('2d');
+
+const labels = [
+  'Gaming\nKnowledge',
+  'Response\nSpeed',
+  'Live Data',
+  'Cost\nEfficiency',
+  'Accuracy',
+  'Customization',
+  'Reliability',
+];
+
+const datasets = [
+  {
+    label: 'GamerMind AI',
+    data: [98, 92, 96, 100, 96, 95, 94],
+    borderColor: '#00ffc8',
+    backgroundColor: 'rgba(0,255,200,0.12)',
+    borderWidth: 2,
+    pointBackgroundColor: '#00ffc8',
+    pointRadius: 4,
+  },
+  {
+    label: 'ChatGPT',
+    data: [62, 78, 65, 40, 74, 80, 82],
+    borderColor: '#19c37d',
+    backgroundColor: 'rgba(25,195,125,0.07)',
+    borderWidth: 2,
+    pointBackgroundColor: '#19c37d',
+    pointRadius: 3,
+  },
+  {
+    label: 'Gemini',
+    data: [58, 85, 80, 72, 70, 68, 78],
+    borderColor: '#4d9fff',
+    backgroundColor: 'rgba(77,159,255,0.07)',
+    borderWidth: 2,
+    pointBackgroundColor: '#4d9fff',
+    pointRadius: 3,
+  },
+  {
+    label: 'Copilot',
+    data: [55, 72, 70, 60, 68, 55, 75],
+    borderColor: '#9b6dff',
+    backgroundColor: 'rgba(155,109,255,0.06)',
+    borderWidth: 2,
+    pointBackgroundColor: '#9b6dff',
+    pointRadius: 3,
+  },
+  {
+    label: 'Claude AI',
+    data: [60, 80, 50, 45, 72, 75, 80],
+    borderColor: '#e8923a',
+    backgroundColor: 'rgba(232,146,58,0.06)',
+    borderWidth: 2,
+    pointBackgroundColor: '#e8923a',
+    pointRadius: 3,
+  },
+];
+
+new Chart(ctx, {
+  type: 'radar',
+  data: { labels, datasets },
+  options: {
+    responsive: true,
+    animation: { duration: 1200, easing: 'easeOutQuart' },
+    scales: {
+      r: {
+        min: 0, max: 100,
+        ticks: {
+          stepSize: 20,
+          color: 'rgba(255,255,255,0.2)',
+          backdropColor: 'transparent',
+          font: { family: "'Share Tech Mono', monospace", size: 9 },
+        },
+        grid: { color: 'rgba(255,255,255,0.06)' },
+        angleLines: { color: 'rgba(255,255,255,0.06)' },
+        pointLabels: {
+          color: '#5a7898',
+          font: { family: "'Exo 2', sans-serif", size: 10, weight: '600' },
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          color: '#5a7898',
+          font: { family: "'Share Tech Mono', monospace", size: 10 },
+          boxWidth: 10, boxHeight: 10,
+          padding: 12,
+        },
+      },
+      tooltip: {
+        backgroundColor: '#0e1628',
+        borderColor: '#1e3050',
+        borderWidth: 1,
+        titleColor: '#00ffc8',
+        bodyColor: '#d8eaf8',
+        titleFont: { family: "'Orbitron', monospace", size: 11 },
+        bodyFont: { family: "'Exo 2', sans-serif", size: 12 },
+      },
+    },
+  },
+});
+
+// ── Intersection observer for animations ──────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
