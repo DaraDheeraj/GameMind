@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "node backend/server.js"
+    "dev": "node backend/server.js",
+    "vercel-build": "echo \"No build required; frontend served from /frontend\""
   },
   "engines": {
-    "node": ">=18"
+    "node": "18.x"
   }
 }
