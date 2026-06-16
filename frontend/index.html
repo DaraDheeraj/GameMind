@@ -440,8 +440,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // ── Config ────────────────────────────────────────────────────
-// Change this to your backend URL when deployed
-const API_BASE = "http://localhost:5000";
+// Use relative API path in deployments (Vercel will host both frontend and API)
+const API_BASE = "";
 
 let loading = false;
 let history = [];
