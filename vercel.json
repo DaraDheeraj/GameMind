@@ -2,11 +2,12 @@
   "version": 2,
   "builds": [
     { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "frontend/**", "use": "@vercel/static" }
+    { "src": "frontend/index.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/chat/stream", "dest": "/api/chat/stream.js" },
     { "src": "/api/chat", "dest": "/api/chat.js" },
+    { "src": "/", "dest": "/frontend/index.html" },
     { "src": "/(.*)", "dest": "/frontend/$1" }
   ]
 }
