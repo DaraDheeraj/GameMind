@@ -8,6 +8,6 @@
     "vercel-build": "echo \"No build required; frontend served from /frontend\""
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   }
 }
