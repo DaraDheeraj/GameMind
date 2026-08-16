@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GamerMind AI — Free Gaming Assistant</title>
+<title>GamerMind AI — Gaming Assistant</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
@@ -13,6 +13,26 @@
     --accent3: #7c3aed; --text: #e2e8f0; --muted: #64748b;
     --glow: 0 0 20px rgba(0,212,255,0.3); --glow2: 0 0 20px rgba(255,107,53,0.3);
   }
+  /* Light theme — toggled via [data-theme="light"] on <html> */
+  html[data-theme="light"] {
+    --bg: #f4f6fb; --surface: #ffffff; --surface2: #eef1f8;
+    --border: #d3dae6; --accent: #0086b3; --accent2: #d9540f;
+    --accent3: #6425c9; --text: #1a2233; --muted: #64748b;
+    --glow: 0 0 16px rgba(0,134,179,0.18); --glow2: 0 0 16px rgba(217,84,15,0.18);
+  }
+  html[data-theme="light"] body::before {
+    background-image: linear-gradient(rgba(0,134,179,0.05) 1px,transparent 1px), linear-gradient(90deg,rgba(0,134,179,0.05) 1px,transparent 1px);
+  }
+  html[data-theme="light"] .logo-text {
+    background:linear-gradient(90deg,var(--accent),#333,var(--accent2));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .theme-toggle {
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    border-radius:8px; width:34px; height:34px; cursor:pointer; font-size:15px;
+    display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+  }
+  .theme-toggle:hover { border-color:var(--accent); color:var(--accent); }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
     background: var(--bg); color: var(--text);
@@ -77,11 +97,14 @@
   }
   .chip:hover { border-color:var(--accent2); color:var(--accent2); background:rgba(255,107,53,0.05); }
 
-  .chat-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .chat-area { flex:1; display:flex; flex-direction:column; overflow:visible; }
   .messages {
     flex:1; overflow-y:auto; padding:24px 28px;
     display:flex; flex-direction:column; gap:20px; scroll-behavior:smooth;
   }
+
+  /* Ensure the input/reply form stays visible above content */
+  .messages { padding-bottom: 160px; }
   .messages::-webkit-scrollbar { width:4px; }
   .messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 
@@ -163,6 +186,7 @@
   .input-area {
     padding:16px 28px 20px; border-top:1px solid var(--border);
     background:rgba(5,8,16,0.9); backdrop-filter:blur(12px); flex-shrink:0;
+    position:sticky; bottom:0; z-index:6;
   }
   .input-wrap {
     display:flex; align-items:flex-end; gap:10px;
@@ -330,6 +354,61 @@
     font-size: 14px;
     filter: drop-shadow(0 0 4px rgba(255, 107, 53, 0.6));
   }
+
+  /* Message action buttons — copy / retry */
+  .msg-actions { display:flex; gap:6px; margin-top:8px; }
+  .msg-action-btn {
+    display:inline-flex; align-items:center; gap:4px; font-size:10px;
+    padding:3px 9px; border-radius:6px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); cursor:pointer;
+    font-family:'Share Tech Mono',monospace; transition:all 0.2s;
+  }
+  .msg-action-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .msg-action-btn.retry:hover { border-color:var(--accent2); color:var(--accent2); }
+
+  /* Recently viewed locations sidebar */
+  .recent-loc-item {
+    display:flex; flex-direction:column; gap:2px; padding:8px 10px;
+    border:1px solid var(--border); border-radius:8px; cursor:pointer;
+    margin-bottom:6px; transition:all 0.2s; background:transparent;
+  }
+  .recent-loc-item:hover { border-color:var(--accent); background:rgba(0,212,255,0.05); }
+  .recent-loc-name { font-size:12px; font-weight:600; color:var(--text); }
+  .recent-loc-game { font-size:10px; color:var(--muted); font-family:'Share Tech Mono',monospace; text-transform:uppercase; }
+
+  /* Auth modal */
+  .auth-modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .auth-modal {
+    position:relative; background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:32px 28px; width:340px; max-width:90vw;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .auth-modal h3 { margin:0 0 8px; font-size:18px; color:var(--text); }
+  .auth-modal-sub { font-size:13px; color:var(--muted); margin:0 0 18px; line-height:1.5; }
+  .auth-modal-close {
+    position:absolute; top:14px; right:14px; background:transparent; border:none;
+    color:var(--muted); font-size:16px; cursor:pointer;
+  }
+  .auth-modal-close:hover { color:var(--text); }
+  .auth-email-input {
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface2); color:var(--text); font-size:14px; margin-bottom:12px;
+    font-family:inherit; box-sizing:border-box;
+  }
+  .auth-email-input:focus { outline:none; border-color:var(--accent); }
+  .auth-submit-btn {
+    width:100%; padding:10px; border-radius:8px; border:none; cursor:pointer;
+    background:var(--accent); color:#04121a; font-weight:600; font-size:14px;
+    transition:opacity 0.2s;
+  }
+  .auth-submit-btn:hover { opacity:0.85; }
+  .auth-signout-btn { background:var(--accent2); }
+  .auth-status-msg { font-size:12px; margin-top:10px; min-height:16px; color:var(--muted); }
+  .auth-status-msg.success { color:#00d68a; }
+  .auth-status-msg.error { color:#ff5c5c; }
 </style>
 </head>
 <body>
@@ -343,9 +422,9 @@
       </div>
     </div>
     <div class="badges">
-      <span class="badge orange">⚡ Fandom Wiki</span>
-      <span class="badge blue">🤖 Gemini / Groq</span>
-      <span class="badge green"><span class="dot"></span>FREE</span>
+      <button class="theme-toggle" id="accountBtn" onclick="openAuthModal()" title="Sign in">👤</button>
+      <button class="theme-toggle" id="clearChatBtn" onclick="confirmClearConversation()" title="Clear conversation">🗑️</button>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark theme">🌙</button>
     </div>
   </header>
 
@@ -373,14 +452,12 @@
           <span class="chip" onclick="ask('Genshin Impact — characters, story, tips')">✨ Genshin</span>
         </div>
       </div>
-      <div>
-        <div class="sec-title">🆓 Free APIs Used</div>
-        <div style="font-size:11px;color:var(--muted);line-height:2;font-family:'Share Tech Mono',monospace;">
-          <div style="color:#00ff88">✅ Google Gemini (Free)</div>
-          <div style="color:#00ff88">✅ Groq / Llama3 (Free)</div>
-          <div style="color:#00ff88">✅ Fandom Wiki (Free)</div>
-        </div>
+
+      <div id="recentLocationsSection" style="display:none;">
+        <div class="sec-title">📍 Recently Viewed</div>
+        <div id="recentLocationsList"></div>
       </div>
+
     </aside>
 
     <div class="chat-area">
@@ -388,13 +465,7 @@
         <div class="welcome" id="welcome">
           <div class="orb">🎮</div>
           <h1>GamerMind AI</h1>
-          <p>Your ultimate gaming assistant — 100% free. Powered by <strong style="color:#00ff88">Google Gemini</strong>, <strong style="color:var(--accent2)">Groq</strong>, and <strong style="color:var(--accent)">Fandom Wiki</strong>.</p>
-          <div class="free-banner">
-            <span class="free-item">✅ Google Gemini Free</span>
-            <span class="free-item">✅ Groq Free</span>
-            <span class="free-item">✅ Fandom Wiki Free</span>
-            <span class="free-item">✅ No Credit Card</span>
-          </div>
+          <p>Your ultimate gaming assistant for lore, tips, builds, and walkthroughs.</p>
           <div class="wchips">
             <span class="wchip" onclick="ask('How do I get the secret ending in Cyberpunk 2077?')">🔐 Secret endings</span>
             <span class="wchip" onclick="ask('What is the lore behind Elden Ring?')">📖 Game lore</span>
@@ -411,7 +482,7 @@
             onkeydown="onKey(event)" oninput="resize(this)"></textarea>
           <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
         </div>
-        <div class="hint">ENTER to send · SHIFT+ENTER for new line · 100% Free APIs</div>
+        <div class="hint">ENTER to send · SHIFT+ENTER for new line</div>
       </div>
     </div>
 
@@ -425,6 +496,7 @@
         <div class="map-game" id="mapGame"></div>
         <div class="map-location-name" id="mapLocationName"></div>
         <div class="map-region" id="mapRegion"></div>
+        <button class="msg-action-btn" id="saveLocationBtn" onclick="saveCurrentLocation()" style="margin-top:8px;">⭐ Save location</button>
       </div>
       <div id="map-container">
         <div class="map-empty" id="mapEmpty">
@@ -437,16 +509,344 @@
   </div>
 </div>
 
+<!-- Auth modal: magic-link sign-in -->
+<div class="auth-modal-overlay" id="authModalOverlay" style="display:none;" onclick="if(event.target===this) closeAuthModal()">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <div id="authModalSignedOut">
+      <h3>Sign in to GamerMind AI</h3>
+      <p class="auth-modal-sub">Save your chat history, favorite locations, and preferences across devices.</p>
+      <input type="email" id="authEmailInput" placeholder="you@example.com" class="auth-email-input" />
+      <button class="auth-submit-btn" onclick="sendMagicLink()">Send magic link</button>
+      <div id="authStatusMsg" class="auth-status-msg"></div>
+    </div>
+    <div id="authModalSignedIn" style="display:none;">
+      <h3>Signed in</h3>
+      <p class="auth-modal-sub" id="authSignedInEmail"></p>
+      <button class="auth-submit-btn auth-signout-btn" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 // ── Config ────────────────────────────────────────────────────
 // Use relative API path in deployments (Vercel will host both frontend and API)
 const API_BASE = "";
 
+// ── Theme toggle (light/dark), persisted in localStorage ───────
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  const btn = document.getElementById("themeToggle");
+  if (btn) btn.textContent = theme === "light" ? "☀️" : "🌙";
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  const next = current === "light" ? "dark" : "light";
+  applyTheme(next);
+  try { localStorage.setItem("gm_theme", next); } catch (e) {}
+  if (currentSession) {
+    apiCall("PUT", "/api/user/settings", { theme: next }).catch((e) =>
+      console.warn("[settings] Failed to sync theme to server:", e.message)
+    );
+  }
+}
+(function initTheme() {
+  let saved = "dark";
+  try { saved = localStorage.getItem("gm_theme") || "dark"; } catch (e) {}
+  applyTheme(saved);
+})();
+
+// ── Conversation persistence (localStorage) ─────────────────────
+// Saves both the rendered message list (for redisplay) and the
+// lightweight `history` array (role/content pairs sent to the
+// backend for context) so a page refresh doesn't wipe the chat.
+const CHAT_STORAGE_KEY = "gm_chat_messages";
+const MAX_STORED_MESSAGES = 40;
+
+function saveHistoryToStorage() {
+  try {
+    localStorage.setItem(
+      CHAT_STORAGE_KEY,
+      JSON.stringify(history.slice(-MAX_STORED_MESSAGES))
+    );
+  } catch (e) {}
+}
+
+function loadHistoryFromStorage() {
+  try {
+    const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (!Array.isArray(saved) || !saved.length) return;
+
+    history = saved;
+    if (welcomeEl) welcomeEl.style.display = "none";
+    for (const m of saved) {
+      addMsg(m.role === "assistant" ? "ai" : "user", m.content);
+    }
+  } catch (e) {}
+}
+
+function clearConversation() {
+  history = [];
+  try { localStorage.removeItem(CHAT_STORAGE_KEY); } catch (e) {}
+  messagesEl.querySelectorAll(".msg").forEach((el) => el.remove());
+  if (welcomeEl) welcomeEl.style.display = "flex";
+  if (currentSession) {
+    apiCall("DELETE", "/api/user/chat-history").catch((e) =>
+      console.warn("[history] Failed to clear server history:", e.message)
+    );
+  }
+}
+
+function confirmClearConversation() {
+  if (!history.length) return;
+  if (confirm("Clear this conversation? This can't be undone.")) {
+    clearConversation();
+  }
+}
+
+// ── Supabase auth (magic link sign-in) ──────────────────────────
+// These are the PUBLIC url + publishable/anon key — safe to embed in
+// frontend code, same as any Supabase client-side app. Access control
+// is enforced by Postgres Row Level Security policies, not by keeping
+// these values secret.
+const SUPABASE_URL = "https://idrdrfkqcbbaypezvxkw.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_uZQrKtL1pfE_eMl2rAPUjA_O62cp3vt";
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+let currentSession = null;
+
+function openAuthModal() {
+  document.getElementById("authModalOverlay").style.display = "flex";
+}
+function closeAuthModal() {
+  document.getElementById("authModalOverlay").style.display = "none";
+  const statusEl = document.getElementById("authStatusMsg");
+  if (statusEl) { statusEl.textContent = ""; statusEl.className = "auth-status-msg"; }
+}
+
+async function sendMagicLink() {
+  const emailInput = document.getElementById("authEmailInput");
+  const statusEl = document.getElementById("authStatusMsg");
+  const email = emailInput.value.trim();
+
+  if (!email || !email.includes("@")) {
+    statusEl.textContent = "Please enter a valid email.";
+    statusEl.className = "auth-status-msg error";
+    return;
+  }
+  if (!supabaseClient) {
+    statusEl.textContent = "Sign-in isn't available right now.";
+    statusEl.className = "auth-status-msg error";
+    return;
+  }
+
+  statusEl.textContent = "Sending link...";
+  statusEl.className = "auth-status-msg";
+
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin },
+  });
+
+  if (error) {
+    statusEl.textContent = error.message || "Something went wrong. Please try again.";
+    statusEl.className = "auth-status-msg error";
+  } else {
+    statusEl.textContent = "✅ Check your email for a sign-in link.";
+    statusEl.className = "auth-status-msg success";
+  }
+}
+
+async function signOut() {
+  if (supabaseClient) await supabaseClient.auth.signOut();
+  // Local data stays put and just becomes "anonymous" again — signing
+  // out never deletes anything already saved locally.
+  updateAuthUI(null);
+  closeAuthModal();
+}
+
+function updateAuthUI(session) {
+  currentSession = session;
+  const btn = document.getElementById("accountBtn");
+  const signedOutEl = document.getElementById("authModalSignedOut");
+  const signedInEl = document.getElementById("authModalSignedIn");
+
+  if (session?.user) {
+    if (btn) { btn.textContent = "✅"; btn.title = session.user.email; }
+    if (signedOutEl) signedOutEl.style.display = "none";
+    if (signedInEl) signedInEl.style.display = "block";
+    const emailEl = document.getElementById("authSignedInEmail");
+    if (emailEl) emailEl.textContent = session.user.email;
+  } else {
+    if (btn) { btn.textContent = "👤"; btn.title = "Sign in"; }
+    if (signedOutEl) signedOutEl.style.display = "block";
+    if (signedInEl) signedInEl.style.display = "none";
+  }
+}
+
+// Attaches the user's access token if signed in; returns plain headers
+// (no Authorization) if anonymous — every API helper below works
+// correctly either way, backend routes that require auth will 401
+// naturally for anonymous requests.
+function authHeaders() {
+  if (currentSession?.access_token) {
+    return { Authorization: `Bearer ${currentSession.access_token}` };
+  }
+  return {};
+}
+
+async function apiCall(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  return res.json();
+}
+
+// When a user signs in, the server becomes the source of truth for
+// their chat history, saved locations, and theme — pulling and
+// replacing local state keeps behavior simple (no merge logic) and
+// means the same account sees the same data on any device.
+async function syncFromServerOnSignIn() {
+  try {
+    const [historyRes, locationsRes, settingsRes] = await Promise.all([
+      apiCall("GET", "/api/user/chat-history"),
+      apiCall("GET", "/api/user/locations"),
+      apiCall("GET", "/api/user/settings"),
+    ]);
+
+    // Restore chat history from server
+    if (historyRes?.messages?.length) {
+      history = historyRes.messages.map((m) => ({ role: m.role, content: m.content }));
+      messagesEl.querySelectorAll(".msg").forEach((el) => el.remove());
+      if (welcomeEl) welcomeEl.style.display = "none";
+      for (const m of history) addMsg(m.role === "assistant" ? "ai" : "user", m.content);
+      saveHistoryToStorage();
+    }
+
+    // Restore saved (favorited) locations into the recent-locations list
+    if (locationsRes?.locations?.length) {
+      recentLocations = locationsRes.locations.map((loc) => ({
+        game: loc.game,
+        label: loc.label,
+        region: loc.region || "",
+        mapDataIdx: window.__mapDataStore.push(loc.map_data) - 1,
+      }));
+      renderRecentLocations();
+      saveRecentLocationsToStorage();
+    }
+
+    // Restore theme preference
+    if (settingsRes?.settings?.theme) {
+      applyTheme(settingsRes.settings.theme);
+      try { localStorage.setItem("gm_theme", settingsRes.settings.theme); } catch (e) {}
+    }
+  } catch (e) {
+    console.warn("[auth] Failed to sync data from server:", e.message);
+  }
+}
+
+if (supabaseClient) {
+  supabaseClient.auth.getSession().then(({ data }) => {
+    updateAuthUI(data?.session || null);
+    if (data?.session) syncFromServerOnSignIn();
+  });
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    updateAuthUI(session);
+    if (event === "SIGNED_IN") syncFromServerOnSignIn();
+  });
+}
+
 let loading = false;
 let history = [];
 let leafletMap = null;
+let currentMapData = null;
+
+async function saveCurrentLocation() {
+  if (!currentMapData?.location) return;
+
+  if (!currentSession) {
+    openAuthModal();
+    return;
+  }
+
+  const btn = document.getElementById("saveLocationBtn");
+  const original = btn.textContent;
+  btn.textContent = "Saving...";
+  btn.disabled = true;
+
+  try {
+    await apiCall("POST", "/api/user/locations", {
+      game: currentMapData.game,
+      label: currentMapData.location.label,
+      region: currentMapData.location.region || "",
+      mapData: currentMapData,
+    });
+    btn.textContent = "✅ Saved";
+    setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1500);
+  } catch (e) {
+    console.warn("[locations] Failed to save location:", e.message);
+    btn.textContent = "⚠️ Failed";
+    setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1500);
+  }
+}
 let currentMarker = null;
+window.__mapDataStore = [];
+
+// Safe storage for message text referenced by copy/retry buttons —
+// same pattern as __mapDataStore. Never embed raw text directly in an
+// onclick attribute: any apostrophe/quote in AI output or a user's
+// question would break the attribute (this exact bug was hit once
+// already with the "VIEW ON MAP" button).
+window.__textStore = [];
+
+async function copyMsgText(idx) {
+  const text = window.__textStore[idx];
+  if (text == null) return;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    // Fallback for browsers/contexts without clipboard API permission
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e2) {}
+    document.body.removeChild(ta);
+  }
+  // Brief visual confirmation on whichever button was clicked
+  const btn = event?.target?.closest?.(".msg-action-btn");
+  if (btn) {
+    const original = btn.textContent;
+    btn.textContent = "✅ Copied";
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  }
+}
+
+function retryMsgText(idx) {
+  const text = window.__textStore[idx];
+  if (text == null) return;
+  inp.value = text;
+  resize(inp);
+  send();
+}
+
+function showMapByIndex(idx) {
+  const data = window.__mapDataStore[idx];
+  if (data) showMap(data);
+}
+
 const messagesEl = document.getElementById("messages");
 const welcomeEl = document.getElementById("welcome");
 const inp = document.getElementById("inp");
@@ -492,11 +892,12 @@ function addMsg(role, content, meta = {}) {
   const avatar = role === "ai" ? "🤖" : "👾";
 
   let extra = "";
-  if (role === "ai" && meta.provider) {
-    extra += `<br><span class="provider-tag">🆓 ${esc(meta.provider)}</span>`;
-  }
   if (role === "ai" && meta.wikiUsed) {
     extra += `<a class="wiki-tag" href="${esc(meta.wikiUsed.url)}" target="_blank">📖 ${esc(meta.wikiUsed.title)}</a>`;
+  }
+  if (role === "ai" && !meta.isError) {
+    const idx = window.__textStore.push(content) - 1;
+    extra += `<div class="msg-actions"><button class="msg-action-btn" onclick="copyMsgText(${idx})">📋 Copy</button></div>`;
   }
 
   const html = role === "ai" ? `<p>${md(content)}</p>${extra}` : esc(content);
@@ -535,6 +936,8 @@ function showMap(mapData) {
 
   infoEl.style.display = "block";
   emptyEl.style.display = "none";
+  currentMapData = mapData;
+  addRecentLocation(mapData);
   mapEl.style.display = "block";
 
   if (leafletMap) {
@@ -550,7 +953,14 @@ function showMap(mapData) {
   leafletMap = L.map("leaflet-map", {
     crs: L.CRS.Simple,
     minZoom: -2,
-    maxZoom: 2,
+    // maxZoom is capped at 0, not a higher number. Since map bounds are
+    // defined in raw pixel units, zoom level 0 = the image's true native
+    // resolution (1 image pixel = 1 screen pixel). Any zoom level above
+    // 0 doesn't load a sharper image — there isn't one — it just stretches
+    // the same pixels bigger, which is what was causing the blur on zoom-in.
+    // Zooming OUT (negative values) is always safe since that's shrinking,
+    // not upscaling.
+    maxZoom: 0,
     zoomControl: true,
   });
 
@@ -574,6 +984,83 @@ function closeMap() {
     leafletMap.remove();
     leafletMap = null;
   }
+}
+
+// ── Recently viewed locations (sidebar) ─────────────────────────
+const RECENT_LOCATIONS_MAX = 8;
+let recentLocations = []; // [{ game, label, region, mapDataIdx }]
+
+function addRecentLocation(mapData) {
+  if (!mapData?.location) return;
+  const label = mapData.location.label || "Location";
+  const game = mapData.game || "";
+
+  // De-dupe: remove any existing entry for the same game+label, then
+  // re-add at the front so it moves to the top as "most recent".
+  recentLocations = recentLocations.filter(
+    (r) => !(r.game === game && r.label === label)
+  );
+
+  const mapDataIdx = window.__mapDataStore.push(mapData) - 1;
+  recentLocations.unshift({ game, label, region: mapData.location.region || "", mapDataIdx });
+  if (recentLocations.length > RECENT_LOCATIONS_MAX) {
+    recentLocations = recentLocations.slice(0, RECENT_LOCATIONS_MAX);
+  }
+
+  renderRecentLocations();
+  saveRecentLocationsToStorage();
+}
+
+function renderRecentLocations() {
+  const section = document.getElementById("recentLocationsSection");
+  const list = document.getElementById("recentLocationsList");
+  if (!section || !list) return;
+
+  if (!recentLocations.length) {
+    section.style.display = "none";
+    return;
+  }
+
+  section.style.display = "block";
+  list.innerHTML = recentLocations
+    .map(
+      (r) => `
+      <div class="recent-loc-item" onclick="showMapByIndex(${r.mapDataIdx})">
+        <span class="recent-loc-name">${esc(r.label)}</span>
+        <span class="recent-loc-game">${esc(r.game)}${r.region ? " · " + esc(r.region) : ""}</span>
+      </div>`
+    )
+    .join("");
+}
+
+function saveRecentLocationsToStorage() {
+  try {
+    // Store the underlying mapData objects (not just the index, which
+    // is only valid for this page load's __mapDataStore array) so they
+    // survive a refresh.
+    const payload = recentLocations.map((r) => ({
+      game: r.game,
+      label: r.label,
+      region: r.region,
+      mapData: window.__mapDataStore[r.mapDataIdx],
+    }));
+    localStorage.setItem("gm_recent_locations", JSON.stringify(payload));
+  } catch (e) {}
+}
+
+function loadRecentLocationsFromStorage() {
+  try {
+    const raw = localStorage.getItem("gm_recent_locations");
+    if (!raw) return;
+    const payload = JSON.parse(raw);
+    recentLocations = payload.map((p) => ({
+      game: p.game,
+      label: p.label,
+      region: p.region,
+      mapDataIdx: window.__mapDataStore.push(p.mapData) - 1,
+    }));
+    renderRecentLocations();
+  } catch (e) {}
 }
 
 async function send() {
@@ -679,10 +1166,14 @@ async function send() {
           if (event.type === "done") {
             // Remove cursor, add metadata tags
             let extras = "";
-            if (metaInfo.provider)
-              extras += `<br><span class="provider-tag">🆓 ${esc(metaInfo.provider)}</span>`;
-            if (metaInfo.mapData)
-              extras += `<br><button class="map-btn" onclick='showMap(${JSON.stringify(metaInfo.mapData)})'>🗺️ VIEW ON MAP — ${esc(metaInfo.mapData.location.label)}</button>`;
+            if (metaInfo.mapData) {
+              const idx = window.__mapDataStore.push(metaInfo.mapData) - 1;
+              extras += `<br><button class="map-btn" onclick="showMapByIndex(${idx})">🗺️ VIEW ON MAP — ${esc(metaInfo.mapData.location.label)}</button>`;
+            }
+            if (fullText) {
+              const textIdx = window.__textStore.push(fullText) - 1;
+              extras += `<div class="msg-actions"><button class="msg-action-btn" onclick="copyMsgText(${textIdx})">📋 Copy</button></div>`;
+            }
 
             bubbleEl.innerHTML = `<p>${md(fullText)}</p>${extras}`;
             scroll();
@@ -690,7 +1181,8 @@ async function send() {
 
           // ── error ──────────────────────────────────────
           if (event.type === "error") {
-            bubbleEl.innerHTML = `<p>⚠️ <strong>Error:</strong> ${esc(event.message)}</p>`;
+            const retryIdx = window.__textStore.push(msg) - 1;
+            bubbleEl.innerHTML = `<p>⚠️ <strong>Error:</strong> ${esc(event.message)}</p><div class="msg-actions"><button class="msg-action-btn retry" onclick="retryMsgText(${retryIdx})">🔁 Retry</button></div>`;
           }
 
         } catch (parseErr) {
@@ -703,13 +1195,24 @@ async function send() {
     history.push({ role: "user",      content: msg      });
     history.push({ role: "assistant", content: fullText  });
     if (history.length > 20) history = history.slice(-20);
+    saveHistoryToStorage();
+    if (currentSession) {
+      apiCall("POST", "/api/user/chat-history", { role: "user", content: msg }).catch(() => {});
+      apiCall("POST", "/api/user/chat-history", { role: "assistant", content: fullText }).catch(() => {});
+    }
 
 } catch (err) {
   removeTyping();
+  const retryIdx = window.__textStore.push(msg) - 1;
+  const errorHtml = `<p>⚠️ <strong>Error:</strong> ${esc(err.message)}</p><div class="msg-actions"><button class="msg-action-btn retry" onclick="retryMsgText(${retryIdx})">🔁 Retry</button></div>`;
   if (bubbleEl) {
-    bubbleEl.innerHTML = `<p>⚠️ <strong>Error:</strong> ${esc(err.message)}</p>`;
+    bubbleEl.innerHTML = errorHtml;
   } else {
-    addMsg("ai", `⚠️ Error: ${err.message}`);
+    addMsg("ai", "", { isError: true });
+    // addMsg escapes/markdowns content, so for the retry button we
+    // instead patch the just-added bubble directly with the raw HTML.
+    const lastBubble = messagesEl.lastElementChild?.querySelector(".msg-bubble");
+    if (lastBubble) lastBubble.innerHTML = errorHtml;
   }
 } finally {
   loading = false;
@@ -717,6 +1220,11 @@ async function send() {
   inp.focus();
 }
 }
+
+// ── Restore persisted state on load ─────────────────────────────
+loadRecentLocationsFromStorage();
+loadHistoryFromStorage();
+
 </script>
 </body>
 </html>
