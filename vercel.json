@@ -6,6 +6,12 @@
   "routes": [
     { "src": "/api/chat/stream", "dest": "/api/chat/stream.js" },
     { "src": "/api/chat", "dest": "/api/chat.js" },
+    { "src": "/api/wiki/search", "dest": "/api/wiki/search.js" },
+    { "src": "/api/wiki/games", "dest": "/api/wiki/games.js" },
+    { "src": "/api/wiki/subdomain", "dest": "/api/wiki/subdomain.js" },
+    { "src": "/api/map/games", "dest": "/api/map/games.js" },
+    { "src": "/api/map/locations", "dest": "/api/map/locations.js" },
+    { "src": "/api/map/find", "dest": "/api/map/find.js" },
     { "src": "/.*", "dest": "/frontend/index.html" },
     { "src": "/", "dest": "/frontend/index.html" }
   ]

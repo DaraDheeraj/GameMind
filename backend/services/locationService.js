@@ -9,11 +9,64 @@
 //  4. saveToJSON()           → only save if verified ✅
 // ============================================================
 
-const fs   = require("fs");
+const fs = require("fs");
 const path = require("path");
+const dns = require("dns");
+const net = require("net");
 const axios = require("axios");
 
 const FILE_PATH = path.join(__dirname, "../data/coordinates.json");
+const ALLOWED_HOSTS = [
+  "fandom.com",
+  "ign.com",
+  "mapgenie.io",
+  "gamespot.com",
+  "gamerguides.com",
+  "pcgamingwiki.com",
+];
+
+function isAllowedHostname(hostname) {
+  const normalized = (hostname || "").toLowerCase();
+  if (!normalized) return false;
+  return ALLOWED_HOSTS.some((domain) => normalized === domain || normalized.endsWith(`.${domain}`));
+}
+
+function isPrivateOrLocalIp(ip) {
+  if (!ip) return false;
+
+  if (net.isIP(ip) === 4) {
+    const octets = ip.split(".").map(Number);
+    if (octets.length !== 4 || octets.some((v) => Number.isNaN(v) || v < 0 || v > 255)) {
+      return false;
+    }
+
+    const [a, b] = octets;
+    return (
+      (a === 10) ||
+      (a === 127) ||
+      (a === 169 && b === 254) ||
+      (a === 192 && b === 168) ||
+      (a === 172 && b >= 16 && b <= 31)
+    );
+  }
+
+  if (net.isIP(ip) === 6) {
+    if (ip === "::1") return true;
+    if (ip.startsWith("fc") || ip.startsWith("FD")) return true;
+    if (ip.startsWith("fe8") || ip.startsWith("FE8")) return true;
+  }
+
+  return false;
+}
+
+async function resolveHostIps(hostname) {
+  return new Promise((resolve, reject) => {
+    dns.lookup(hostname, { all: true }, (err, addresses) => {
+      if (err) return reject(err);
+      resolve(addresses.map((entry) => entry.address));
+    });
+  });
+}
 
 // Always read fresh from disk
 function readDB() {
@@ -119,15 +172,34 @@ async function verifyWithURL(url, itemName) {
   if (!url || !itemName) return false;
 
   try {
+    const parsedUrl = new URL(url);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      console.warn(`[locationService] ❌ Rejected non-http(s) URL: ${url}`);
+      return false;
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+    if (!isAllowedHostname(hostname)) {
+      console.warn(`[locationService] ❌ Rejected disallowed hostname: ${hostname}`);
+      return false;
+    }
+
+    const addresses = await resolveHostIps(hostname);
+    if (addresses.some((ip) => isPrivateOrLocalIp(ip))) {
+      console.warn(`[locationService] ❌ Rejected internal/private IP for: ${hostname}`);
+      return false;
+    }
+
     console.log(`[locationService] 🔍 Verifying "${itemName}" at: ${url}`);
 
     const res = await axios.get(url, {
       timeout: 8000,
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; GamerMindAI/1.0)",
-        "Accept":     "text/html,application/xhtml+xml",
+        Accept: "text/html,application/xhtml+xml",
       },
-      maxRedirects: 3,
+      maxRedirects: 0,
+      maxContentLength: 2 * 1024 * 1024,
     });
 
     // Strip all HTML tags → plain text
@@ -139,15 +211,14 @@ async function verifyWithURL(url, itemName) {
       .toLowerCase();
 
     // Check how many words from the item name appear on the page
-    const words      = normalize(itemName).split(" ").filter(w => w.length > 2);
-    const matchCount = words.filter(w => plainText.includes(w)).length;
-    const ratio      = words.length > 0 ? matchCount / words.length : 0;
+    const words = normalize(itemName).split(" ").filter((w) => w.length > 2);
+    const matchCount = words.filter((w) => plainText.includes(w)).length;
+    const ratio = words.length > 0 ? matchCount / words.length : 0;
 
     console.log(`[locationService] Matched ${matchCount}/${words.length} words (${Math.round(ratio * 100)}%)`);
 
     // ✅ Pass if 60%+ of words found on the page
     return ratio >= 0.6;
-
   } catch (err) {
     console.warn("[locationService] ❌ Verification fetch failed:", err.message);
     return false; // fail safe — don't save if we can't verify
@@ -156,23 +227,32 @@ async function verifyWithURL(url, itemName) {
 
 // ─── STEP 4: saveToJSON ───────────────────────────────────────
 function saveToJSON(gameKey, locationKey, data) {
+  if (process.env.VERCEL) {
+    console.warn("[locationService] Persistence is unavailable in Vercel; skipping coordinates.json write.");
+    return;
+  }
+
   const db = readDB();
 
-  if (!db[gameKey])           db[gameKey] = { mapImage: "", mapWidth: 2048, mapHeight: 2048, locations: {} };
+  if (!db[gameKey]) db[gameKey] = { mapImage: "", mapWidth: 2048, mapHeight: 2048, locations: {} };
   if (!db[gameKey].locations) db[gameKey].locations = {};
 
   db[gameKey].locations[normalize(locationKey)] = {
-    x:        data.x,
-    y:        data.y,
-    type:     data.type   || "location",
-    label:    data.label  || locationKey,
-    region:   data.region || "Unknown",
+    x: data.x,
+    y: data.y,
+    type: data.type || "location",
+    label: data.label || locationKey,
+    region: data.region || "Unknown",
     verified: true,
-    addedAt:  new Date().toISOString(),
+    addedAt: new Date().toISOString(),
   };
 
-  fs.writeFileSync(FILE_PATH, JSON.stringify(db, null, 2), "utf-8");
-  console.log(`[locationService] ✅ Saved "${locationKey}" to coordinates.json`);
+  try {
+    fs.writeFileSync(FILE_PATH, JSON.stringify(db, null, 2), "utf-8");
+    console.log(`[locationService] ✅ Saved "${locationKey}" to coordinates.json`);
+  } catch (err) {
+    console.warn("[locationService] ⚠️ Failed to save coordinates.json:", err.message);
+  }
 }
 
 // ─── MAIN: getMapData ─────────────────────────────────────────

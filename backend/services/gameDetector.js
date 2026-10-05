@@ -74,7 +74,10 @@ function keywordDetect(query) {
     "zelda":           ["zelda", "link", "hyrule", "ganon", "triforce", "korok", "sheikah", "botw", "totk"],
     "league of legends":["league", "lol", "champion", "rift", "baron", "nexus", "summoner", "jungler", "gank"],
     "apex legends":    ["apex", "legend", "wraith", "bloodhound", "caustic", "respawn", "kings canyon"],
-    "minecraft":       ["minecraft", "creeper", "steve", "nether", "crafting", "redstone"],
+    "minecraft":       [...new Set([
+      "minecraft", "creeper", "enderman", "nether", "stronghold", "herobrine", "dirt", "pickaxe", "steve", "bedrock", "overworld",
+      "minecraft", "creeper", "steve", "nether", "crafting", "redstone"
+    ])],
     "baldurs gate 3":  ["baldur", "bg3", "larian", "astarion", "shadowheart", "gale", "faerun"],
     "hogwarts legacy": ["hogwarts", "hogwarts legacy", "wizarding", "magic spell", "expelliarmus"],
     "genshin impact":  ["genshin", "teyvat", "paimon", "mondstadt", "inazuma", "archon"],

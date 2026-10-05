@@ -57,6 +57,27 @@ const GAME_WIKI_MAP = {
   "dota 2": "dota2",
 };
 
+const WIKI_CACHE_TTL_MS = 30 * 60 * 1000;
+const wikiCache = new Map();
+
+function getCacheKey(gameName, query) {
+  return `${gameName.toLowerCase().trim()}::${query.toLowerCase().trim()}`;
+}
+
+function getFromCache(key) {
+  const entry = wikiCache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expiresAt) {
+    wikiCache.delete(key);
+    return undefined;
+  }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  wikiCache.set(key, { data, expiresAt: Date.now() + WIKI_CACHE_TTL_MS });
+}
+
 function getWikiSubdomain(gameName) {
   const lower = gameName.toLowerCase().trim();
   if (GAME_WIKI_MAP[lower]) return GAME_WIKI_MAP[lower];
@@ -94,6 +115,13 @@ function extractText(sections = [], maxSections = 4, maxChars = 2500) {
 }
 
 async function searchWiki(gameName, query) {
+  const cacheKey = getCacheKey(gameName, query);
+  const cached = getFromCache(cacheKey);
+  if (cached !== undefined) {
+    console.log(`[Fandom] Cache hit: "${gameName}" / "${query}"`);
+    return cached;
+  }
+
   const subdomain = getWikiSubdomain(gameName);
   try {
     const searchURL =
@@ -106,7 +134,10 @@ async function searchWiki(gameName, query) {
     });
 
     const items = searchRes.data?.items || [];
-    if (!items.length) return null;
+    if (!items.length) {
+      setCache(cacheKey, null);
+      return null;
+    }
 
     const articleURL =
       `https://${subdomain}.fandom.com/api/v1/Articles/AsSimpleJson?id=${items[0].id}`;
@@ -117,9 +148,12 @@ async function searchWiki(gameName, query) {
     });
 
     const content = extractText(articleRes.data?.sections || []);
-    if (!content) return null;
+    if (!content) {
+      setCache(cacheKey, null);
+      return null;
+    }
 
-    return {
+    const result = {
       game: gameName,
       title: items[0].title,
       url: items[0].url,
@@ -127,7 +161,10 @@ async function searchWiki(gameName, query) {
       content,
       relatedArticles: items.slice(1).map((i) => ({ title: i.title, url: i.url })),
     };
+    setCache(cacheKey, result);
+    return result;
   } catch (err) {
+    // A transient failure should not be remembered as "no data exists" for the next 30 minutes.
     console.warn(`[Fandom] Failed for "${gameName}":`, err.message);
     return null;
   }

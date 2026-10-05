@@ -6,6 +6,11 @@ backend/node_modules/
 # Environment
 backend/.env
 .env
+.env.*
+!.env.example
+
+# Temporary files
+temp_frontend_script.js
 
 # Logs
 npm-debug.log*

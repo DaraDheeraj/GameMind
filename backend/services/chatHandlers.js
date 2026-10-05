@@ -145,7 +145,7 @@ async function handleChatStream(req, res) {
 async function streamGemini(message, history, systemPrompt, send) {
   const MAX_RETRIES = 2;
   const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse`;
 
   const contents = [
     ...history.slice(-8).map((m) => ({
@@ -157,7 +157,7 @@ async function streamGemini(message, history, systemPrompt, send) {
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const res = await axios.post(
+      const response = await axios.post(
         GEMINI_URL,
         {
           system_instruction: { parts: [{ text: systemPrompt }] },
@@ -169,17 +169,44 @@ async function streamGemini(message, history, systemPrompt, send) {
             "Content-Type": "application/json",
             "x-goog-api-key": process.env.GEMINI_API_KEY,
           },
+          responseType: "stream",
           timeout: 60000,
         }
       );
 
-      const fullText = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!fullText) throw new Error("Empty response from Gemini");
+      let buffer = "";
+      let receivedText = false;
 
-      const words = fullText.split(/(\s+)/);
-      for (const word of words) {
-        send({ type: "delta", text: word });
-        await new Promise((r) => setTimeout(r, 10));
+      response.data.on("data", (chunk) => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const raw = line.slice(5).trim();
+          if (!raw || raw === "[DONE]") continue;
+          try {
+            const json = JSON.parse(raw);
+            const text = json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if (text) {
+              receivedText = true;
+              send({ type: "delta", text });
+            }
+            const finishReason = json?.candidates?.[0]?.finishReason;
+            if (finishReason && finishReason !== "STOP") {
+              console.warn("[Gemini] Stream finish reason:", finishReason);
+            }
+          } catch {}
+        }
+      });
+
+      await new Promise((resolve, reject) => {
+        response.data.on("end", resolve);
+        response.data.on("error", reject);
+      });
+
+      if (!receivedText) {
+        throw new Error("Empty response from Gemini");
       }
 
       send({ type: "provider", name: "Google Gemini 2.0 Flash (Free)" });
