@@ -60,6 +60,7 @@ app.use("/api/chat", chatDailyBudgetMiddleware);
 app.use("/api/chat", require("./routes/chat"));
 app.use("/api/wiki", require("./routes/wiki"));
 app.use("/api/map", require("./routes/map"));
+app.use("/api/user", require("./routes/user"));
 
 // Serve frontend (so visiting http://localhost:5000/ works)
 // The frontend lives at repo-root `/frontend`.
